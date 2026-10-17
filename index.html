@@ -941,9 +941,9 @@ def morse_dash(): __stem_actions.append(('morse_dash', 1))
 
       const codeLines = (studentCode || "").split("\n");
       let targetErrorLine = detectedLine;
-      let aiHint = "Kiểm tra lại logic và cú pháp các dòng lệnh.";
+      let aiHint = "Em hãy kiểm tra lại cấu trúc các dòng lệnh vừa viết nhé.";
 
-      // 2. Chẩn đoán chi tiết lỗi cú pháp (SyntaxError / bad input / ParseError)
+      // 2. Chẩn đoán và gợi mở tư duy Socratic (hướng dẫn quan sát, KHÔNG đưa trực tiếp đáp án)
       if (rawMsg.includes("bad input") || rawMsg.includes("SyntaxError") || rawMsg.includes("ParseError")) {
         const prevLineIdx = (detectedLine && detectedLine > 1) ? detectedLine - 2 : -1;
         const curLineIdx = (detectedLine && detectedLine >= 1) ? detectedLine - 1 : -1;
@@ -952,44 +952,52 @@ def morse_dash(): __stem_actions.append(('morse_dash', 1))
         const curLineText = curLineIdx >= 0 ? codeLines[curLineIdx].trim() : "";
         const controlStmtRegex = /\b(for|if|elif|else|while|def|class)\b/;
 
-        // Trường hợp 1: Dòng ngay trước đó thiếu dấu hai chấm (:) ở câu lệnh for/if/while/def
+        // TH1: Dòng ngay trước đó là for/if/while/def nhưng thiếu ký tự kết thúc mệnh đề
         if (prevLineText.match(controlStmtRegex) && !prevLineText.endsWith(":") && !prevLineText.startsWith("#")) {
           targetErrorLine = detectedLine - 1;
-          rawMsg = `SyntaxError: Thiếu dấu hai chấm (:) ở cuối câu lệnh ở dòng ${targetErrorLine}`;
-          aiHint = `Dòng ${targetErrorLine}: Câu lệnh "${prevLineText}" đang thiếu dấu hai chấm (:) ở cuối dòng! Hãy thêm dấu : vào cuối dòng nhé.`;
+          rawMsg = `SyntaxError: Cú pháp câu lệnh chưa hoàn chỉnh ở dòng ${targetErrorLine}`;
+          aiHint = `Em hãy quan sát kỹ phần cuối câu lệnh ở dòng ${targetErrorLine}: Trong Python, khi bắt đầu một mệnh đề điều kiện hoặc vòng lặp (như if, for, while), quy tắc cú pháp luôn yêu cầu ký tự đặc biệt gì ở cuối dòng để bắt đầu khối lệnh con?`;
         }
-        // Trường hợp 2: Chính dòng đó thiếu dấu hai chấm (:)
+        // TH2: Chính dòng đó là câu lệnh if/for/while/def thiếu ký tự kết thúc
         else if (curLineText.match(controlStmtRegex) && !curLineText.endsWith(":") && !curLineText.startsWith("#")) {
           targetErrorLine = detectedLine;
-          rawMsg = `SyntaxError: Thiếu dấu hai chấm (:) ở cuối câu lệnh ở dòng ${targetErrorLine}`;
-          aiHint = `Dòng ${targetErrorLine}: Câu lệnh "${curLineText}" đang thiếu dấu hai chấm (:) ở cuối dòng! Hãy thêm dấu : vào cuối dòng nhé.`;
+          rawMsg = `SyntaxError: Cú pháp câu lệnh chưa hoàn chỉnh ở dòng ${targetErrorLine}`;
+          aiHint = `Em hãy quan sát kỹ phần cuối câu lệnh ở dòng ${targetErrorLine}: Trong Python, khi bắt đầu một mệnh đề điều kiện hoặc vòng lặp (như if, for, while), quy tắc cú pháp luôn yêu cầu ký tự đặc biệt gì ở cuối dòng để bắt đầu khối lệnh con?`;
         }
-        // Trường hợp 3: Mở ngoặc mà chưa đóng ngoặc
+        // TH3: Mở ngoặc mà chưa đóng ngoặc
         else if (curLineText.includes("(") && !curLineText.includes(")")) {
-          rawMsg = `SyntaxError: Chưa đóng dấu ngoặc đơn ở dòng ${targetErrorLine}`;
-          aiHint = `Dòng ${targetErrorLine}: Em đang mở ngoặc '(' mà chưa đóng ngoặc ')' tương ứng.`;
+          rawMsg = `SyntaxError: Dấu ngoặc đơn chưa đủ cặp ở dòng ${targetErrorLine}`;
+          aiHint = `Em hãy đếm lại số lượng dấu mở ngoặc '(' và đóng ngoặc ')' ở dòng ${targetErrorLine} xem đã đủ cặp đóng - mở chưa nhé.`;
         }
-        // Các trường hợp cú pháp khác
+        // TH4: Nháy đơn hoặc nháy kép chưa đóng kín
+        else if ((curLineText.split('"').length - 1) % 2 !== 0 || (curLineText.split("'").length - 1) % 2 !== 0) {
+          rawMsg = `SyntaxError: Chuỗi ký tự chưa đóng kín ở dòng ${targetErrorLine}`;
+          aiHint = `Em hãy quan sát các dấu nháy kép (") hoặc nháy đơn (') ở dòng ${targetErrorLine} xem chuỗi ký tự đã được bao bọc trọn vẹn chưa nhé.`;
+        }
+        // Cú pháp chung
         else {
-          rawMsg = rawMsg.replace(/bad input/gi, "Cú pháp không hợp lệ (sai ký tự hoặc thiếu dấu)");
-          aiHint = `Kiểm tra dòng ${targetErrorLine || 'vừa sửa'}: Chú ý dấu hai chấm (:) ở cuối lệnh for/if/while, dấu đóng mở ngoặc () hoặc dấu nháy kép "".`;
+          rawMsg = `SyntaxError: Cú pháp chưa hợp lệ ở dòng ${targetErrorLine || 'vừa sửa'}`;
+          aiHint = `Dòng ${targetErrorLine || 'vừa sửa'} đang có ký hiệu viết chưa đúng quy tắc Python. Em hãy quan sát kỹ dấu kết thúc câu lệnh, các dấu ngoặc hoặc các ký hiệu toán học nhé.`;
         }
       } else if (rawMsg.includes("TimeLimitError") || rawMsg.includes("time limit")) {
-        rawMsg = "TimeLimitError: Chương trình đã chạy quá 8 giây. Rất có thể em đã tạo một vòng lặp vô tận (while True không có lệnh dừng hoặc không tăng biến đếm)!";
-        aiHint = "Hãy kiểm tra điều kiện dừng của vòng lặp while và đảm bảo biến đếm được tăng sau mỗi lần lặp (ví dụ: i = i + 1).";
+        rawMsg = "TimeLimitError: Chương trình đã chạy quá 8 giây (nghi ngờ vòng lặp vô tận)";
+        aiHint = "Vòng lặp đang chạy mãi không dừng được. Em hãy quan sát xem sau mỗi lượt lặp, biến đếm có thay đổi không, và điều kiện dừng khi nào sẽ trở thành False?";
       } else if (rawMsg.includes("IndentationError")) {
-        aiHint = `Lỗi thụt lề ở dòng ${targetErrorLine || ''}: Các câu lệnh con bên trong if/else, for, while, def cần thụt lề vào trong bằng phím Tab.`;
+        rawMsg = `IndentationError: Lỗi thụt lề ở dòng ${targetErrorLine || ''}`;
+        aiHint = `Dòng ${targetErrorLine || ''} đang đặt sai vị trí thụt dòng. Em hãy nhớ quy tắc: Những dòng lệnh nằm trong khối lệnh con (bên trong if, for, def) phải thụt lề vào trong bằng 1 phím Tab so với dòng lệnh cha.`;
       } else if (rawMsg.includes("NameError")) {
-        aiHint = `Lỗi tên biến/hàm ở dòng ${targetErrorLine || ''}: Biến hoặc hàm chưa được khai báo hoặc viết sai chính tả (chú ý Python phân biệt HOA và thường).`;
+        rawMsg = `NameError: Tên chưa được định nghĩa ở dòng ${targetErrorLine || ''}`;
+        aiHint = `Ở dòng ${targetErrorLine || ''}, có một tên biến hoặc câu lệnh mà máy tính chưa nhận diện được. Em hãy rà soát xem mình có gõ nhầm chữ cái nào, hoặc quên quy tắc phân biệt chữ HOA - thường của Python không?`;
       } else if (rawMsg.includes("ValueError")) {
-        aiHint = `Lỗi giá trị (ValueError) ở dòng ${targetErrorLine || ''}: Hàm int() yêu cầu chuỗi nhập vào phải là các chữ số hợp lệ.`;
+        rawMsg = `ValueError: Giá trị không phù hợp ở dòng ${targetErrorLine || ''}`;
+        aiHint = `Hàm chuyển đổi kiểu dữ liệu ở dòng ${targetErrorLine || ''} gặp giá trị không hợp lệ. Em hãy kiểm tra xem dữ liệu nhập vào có phải toàn bộ là chữ số không nhé.`;
       }
 
       consoleEl.innerText += "\n[LỖI THỰC THI]: " + rawMsg;
       studentTasksState[curTask.id].failCount += 1;
       studentTasksState[curTask.id].lastError = { msg: rawMsg, hint: aiHint };
       syncToFirebase(studentTasksState[curTask.id].failCount >= 3 ? "stuck" : "coding");
-      appendBotMessage(`⚠️ <b>Lỗi:</b> ${rawMsg}<br><br>💡 <i>Gợi ý: ${aiHint}</i>`);
+      appendBotMessage(`⚠️ <b>Lỗi:</b> ${rawMsg}<br><br>💡 <b>Gợi ý tư duy:</b> ${aiHint}`);
     }
 
     function syncToFirebase(currentStatus) {
@@ -1099,10 +1107,15 @@ def morse_dash(): __stem_actions.append(('morse_dash', 1))
           return;
         }
         appendUserMessage("Giải thích lỗi vừa gặp?");
-        setTimeout(() => appendBotMessage("Em bấm <b>'Kiểm tra & Chấm bài'</b> để hệ thống kiểm tra chi tiết nhé!"), 200);
+        const lastErr = studentTasksState[curTask?.id]?.lastError;
+        if (lastErr && lastErr.hint) {
+          setTimeout(() => appendBotMessage(`💡 <b>Gợi ý tư duy:</b> ${lastErr.hint}`), 200);
+        } else {
+          setTimeout(() => appendBotMessage("Em hãy bấm nút <b>'Kiểm tra & Chấm bài'</b> trước để Thầy xem qua code và phát hiện lỗi giúp em nhé!"), 200);
+        }
       } else {
         appendUserMessage("Gợi ý bước tiếp theo?");
-        setTimeout(() => appendBotMessage(`💡 <b>Gợi ý:</b> Hãy quan sát logic điều kiện hoặc thứ tự tuần tự của các câu lệnh từ trên xuống dưới.`), 200);
+        setTimeout(() => appendBotMessage(`💡 <b>Gợi ý tư duy:</b> Hãy quan sát logic điều kiện hoặc thứ tự tuần tự của các câu lệnh từ trên xuống dưới.`), 200);
       }
     }
 
