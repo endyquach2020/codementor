@@ -334,7 +334,55 @@
 
     firebase.initializeApp(firebaseConfig);
 
-    let assignments = [];
+    const defaultAssignments = [
+      {
+        id: "task_1",
+        title: "Bài 1: Làm quen với câu lệnh print & biến",
+        desc: "Viết chương trình khai báo biến name chứa tên em, tuổi age, sau đó in ra câu chào mừng theo mẫu: 'Xin chao, em la [name], nam nay em [age] tuoi!'",
+        sample: "Input: (không có)\nOutput: Xin chao, em la An, nam nay em 12 tuoi!",
+        template: "# Khai báo biến và in thông tin\nname = 'An'\nage = 12\n\nprint(f'Xin chao, em la {name}, nam nay em {age} tuoi!')\n",
+        expectedOutput: "Xin chao, em la An, nam nay em 12 tuoi!",
+        type: "algorithm"
+      },
+      {
+        id: "task_2",
+        title: "Bài 2: Tính điểm trung bình và rẽ nhánh if-else",
+        desc: "Viết chương trình tính điểm trung bình (dtb) của 2 môn Toán và Văn. Nếu dtb >= 8.0 in 'Hoc sinh Gioi', ngược lại in 'Can co gang'.",
+        sample: "Toán = 9, Văn = 8 -> Điểm TB: 8.5 -> In: Hoc sinh Gioi",
+        template: "toan = 9\nvan = 8\ndtb = (toan + van) / 2\n\nif dtb >= 8.0:\n    print('Hoc sinh Gioi')\nelse:\n    print('Can co gang')\n",
+        expectedOutput: "Hoc sinh Gioi",
+        type: "algorithm"
+      },
+      {
+        id: "task_3",
+        title: "Bài 3: Nhập dữ liệu với input() & Vòng lặp",
+        desc: "Sử dụng hàm input() để nhập một số nguyên dương n từ bàn phím, sau đó dùng vòng lặp for tính tổng S = 1 + 2 + ... + n và in ra câu: 'Tong la: [S]'",
+        sample: "Nhập n: 5 -> Tính 1+2+3+4+5 -> In: Tong la: 15",
+        template: "# Nhập số n từ bàn phím và tính tổng từ 1 đến n\nn = int(input('Nhập số n: '))\ntong = 0\nfor i in range(1, n + 1):\n    tong += i\nprint(f'Tong la: {tong}')\n",
+        expectedOutput: "Tong la:",
+        type: "algorithm"
+      },
+      {
+        id: "task_4",
+        title: "Bài 4: Dự án STEM - Đèn Giao Thông Ngã Tư",
+        desc: "Điều khiển chu kỳ đèn giao thông chuẩn ngã tư: Đèn ĐỎ sáng 2 giây (led_red.on()), chuyển sang Đèn VÀNG sáng 1 giây (led_yellow.on()), sau đó chuyển sang Đèn XANH sáng 2 giây (led_green.on()).",
+        sample: "Chu kỳ: led_red.on() -> sleep(2) -> led_yellow.on() -> sleep(1) -> led_green.on() -> sleep(2)",
+        template: "# Lập trình chu kỳ đèn ngã tư\nled_red.on()\nsleep(2)\n\nled_yellow.on()\nsleep(1)\n\nled_green.on()\nsleep(2)\n",
+        expectedOutput: "traffic_completed",
+        type: "stem_traffic"
+      },
+      {
+        id: "task_5",
+        title: "Bài 5: Dự án STEM - Mã Cứu Hộ Morse SOS",
+        desc: "Dùng vòng lặp for để phát tín hiệu khẩn cấp SOS theo chuẩn quốc tế: 3 nhịp ngắn chữ S (morse_dot), 3 nhịp dài chữ O (morse_dash), và 3 nhịp ngắn chữ S (morse_dot).",
+        sample: "S: 3 dot | O: 3 dash | S: 3 dot",
+        template: "# Phát tín hiệu Morse SOS\n# Chữ S: 3 nhịp ngắn\nfor i in range(3):\n    morse_dot()\n\n# Chữ O: 3 nhịp dài (học sinh hoàn thiện vòng lặp này)\nfor i in range(3):\n    morse_dash()\n\n# Chữ S: 3 nhịp ngắn\nfor i in range(3):\n    morse_dot()\n",
+        expectedOutput: "morse_completed",
+        type: "stem_morse"
+      }
+    ];
+
+    let assignments = [...defaultAssignments];
     let currentTaskIndex = 0;
     let pcId = null;
     let studentName = "";
@@ -403,15 +451,23 @@
     }
 
     function listenAssignments() {
-      firebase.database().ref("assignments").on("value", snapshot => {
-        const data = snapshot.val();
-        if (data && Array.isArray(data) && data.length > 0) {
-          assignments = data;
-          initTasksState();
-          renderTaskList();
-          loadTask(currentTaskIndex);
-        }
-      });
+      initTasksState();
+      renderTaskList();
+      loadTask(0);
+
+      try {
+        firebase.database().ref("assignments").on("value", snapshot => {
+          const data = snapshot.val();
+          if (data && Array.isArray(data) && data.length > 0) {
+            assignments = data;
+            initTasksState();
+            renderTaskList();
+            loadTask(currentTaskIndex);
+          }
+        });
+      } catch (err) {
+        console.warn("Firebase không khả dụng, sử dụng bộ bài tập mặc định:", err);
+      }
     }
 
     function initTasksState() {
@@ -486,24 +542,26 @@
 
       trafficBox.classList.add("hidden");
       morseBox.classList.add("hidden");
-      terminalBox.classList.add("hidden");
+      terminalBox.classList.remove("hidden");
 
       const type = getTaskType(task);
 
       if (type === "stem_traffic" || type === "stem") {
         trafficBox.classList.remove("hidden");
+        terminalBox.className = "h-32 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden flex-shrink-0";
         typeBadge.innerText = "DỰ ÁN STEM";
         typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-[#0d7665] border border-teal-200";
         engineBadge.innerText = "Virtual Traffic Simulator";
         resetLeds();
       } else if (type === "stem_morse") {
         morseBox.classList.remove("hidden");
+        terminalBox.className = "h-32 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden flex-shrink-0";
         typeBadge.innerText = "DỰ ÁN STEM";
         typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-200";
         engineBadge.innerText = "Virtual Morse Beacon";
         resetMorse();
       } else {
-        terminalBox.classList.remove("hidden");
+        terminalBox.className = "h-44 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden flex-shrink-0";
         typeBadge.innerText = "LẬP TRÌNH";
         typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200";
         engineBadge.innerText = "Python 3.x In-Browser";
@@ -594,159 +652,251 @@
 
     async function runAndGradeCode() {
       const curTask = assignments[currentTaskIndex];
+      if (!curTask) return;
       const code = document.getElementById("codeEditor").value;
-      if (curTask) studentTasksState[curTask.id].code = code;
-
-      const isMorseCode = code.includes("morse_dot") || code.includes("morse_dash") || (curTask && (curTask.title + curTask.desc).toLowerCase().includes("morse"));
-      const isTrafficCode = code.includes("led_red") || code.includes("led_yellow") || code.includes("led_green");
-
-      if (isMorseCode) {
-        document.getElementById("stemMorseBox").classList.remove("hidden");
-        document.getElementById("terminalBox").classList.add("hidden");
-        document.getElementById("stemTrafficBox").classList.add("hidden");
-        runMorseSimulation(code, curTask);
-        return;
-      }
-
-      if (isTrafficCode) {
-        document.getElementById("stemTrafficBox").classList.remove("hidden");
-        document.getElementById("terminalBox").classList.add("hidden");
-        document.getElementById("stemMorseBox").classList.add("hidden");
-        runTrafficSimulation(code, curTask);
-        return;
-      }
+      studentTasksState[curTask.id].code = code;
 
       const consoleEl = document.getElementById("outputConsole");
-      consoleEl.innerText = `Đang chấm [${curTask.title.split(":")[0]}]...\n`;
-      let outputBuffer = "";
+      const runBtn = document.getElementById("runBtn");
+      const runBtnText = document.getElementById("runBtnText");
 
+      runBtnText.innerText = "Đang chạy & chấm...";
+      runBtn.classList.add("opacity-75", "pointer-events-none");
+      consoleEl.innerText = `>>> Đang thực thi [${curTask.title.split(":")[0]}]...\n`;
+
+      let terminalOutput = "";
+      let fullExecutionBuffer = "";
+      let traceDetected = false;
+      const taskType = getTaskType(curTask);
+
+      // Cấu hình Skulpt Runtime
       Sk.configure({
         output: text => {
-          consoleEl.innerText += text;
-          outputBuffer += text;
+          fullExecutionBuffer += text;
+          if (text.includes("__STEM_TRACE__:")) {
+            traceDetected = true;
+          }
+          if (!traceDetected) {
+            consoleEl.innerText += text;
+            terminalOutput += text;
+          }
         },
         read: x => {
           if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
             throw "File not found: '" + x + "'";
           return Sk.builtinFiles["files"][x];
-        }
+        },
+        inputfun: promptText => {
+          return new Promise(resolve => {
+            const promptStr = promptText || "Nhập giá trị: ";
+            consoleEl.innerText += promptStr;
+            setTimeout(() => {
+              const entered = window.prompt(promptStr);
+              const val = entered !== null ? entered : "";
+              consoleEl.innerText += val + "\n";
+              terminalOutput += val + "\n";
+              fullExecutionBuffer += val + "\n";
+              resolve(val);
+            }, 60);
+          });
+        },
+        inputfunTakesPrompt: true
       });
 
-      const codeToRun = `
-def sleep(s): pass
-def morse_dot(): pass
-def morse_dash(): pass
-` + code;
+      // Ngắt sau 8 giây để chống treo tab khi gặp vòng lặp vô tận (while True)
+      Sk.execLimit = 8000;
 
-      Sk.misceval.asyncToPromise(() => Sk.importMainWithBody("<stdin>", false, codeToRun, true))
-        .then(() => {
-          const cleanOutput = outputBuffer.trim().replace(/\r/g, "");
-          const expected = (curTask.expectedOutput || "").trim();
+      // Mã tiền xử lý hỗ trợ mô hình STEM & vi điều khiển ảo
+      const stemPreamble = `
+__stem_actions = []
 
-          if (cleanOutput === expected || cleanOutput.endsWith(expected)) {
-            consoleEl.innerText += `\n\n[CHÍNH XÁC] Kết quả khớp (${cleanOutput} == ${expected})!`;
-            studentTasksState[curTask.id].passed = true;
-            studentTasksState[curTask.id].failCount = 0;
-            studentTasksState[curTask.id].lastError = null;
-            renderTaskList();
-            syncToFirebase("coding");
-            appendBotMessage(`🎉 Chúc mừng em đã hoàn thành <b>${curTask.title.split(":")[0]}</b>! Hãy tiếp tục bài sau.`);
-          } else {
-            consoleEl.innerText += `\n\n[CHƯA ĐÚNG] Kết quả in ra: "${cleanOutput}" | Kỳ vọng: "${expected}"`;
-            studentTasksState[curTask.id].failCount += 1;
-            syncToFirebase("coding");
-            appendBotMessage(`Kết quả chưa đúng với yêu cầu. Em hãy kiểm tra lại thuật toán nhé!`);
-          }
-        })
-        .catch(err => {
-          const errMsg = err.toString();
-          consoleEl.innerText += "\n[LỖI CÚ PHÁP]: " + errMsg;
-          studentTasksState[curTask.id].failCount += 1;
-          let aiHint = "Kiểm tra cú pháp lệnh (ví dụ: 'for' viết thường và có dấu : ở cuối).";
-          studentTasksState[curTask.id].lastError = { msg: errMsg, hint: aiHint };
-          syncToFirebase(studentTasksState[curTask.id].failCount >= 3 ? "stuck" : "coding");
-          appendBotMessage(`⚠️ <b>Lỗi:</b> ${errMsg}<br><br>💡 <i>Gợi ý: ${aiHint}</i>`);
-        });
-    }
+class _TrafficLed:
+    def __init__(self, color):
+        self.color = color
+    def on(self):
+        __stem_actions.append(('led_on', self.color))
+    def off(self):
+        __stem_actions.append(('led_off', self.color))
 
-    async function runTrafficSimulation(code, curTask) {
-      const runBtnText = document.getElementById("runBtnText");
-      runBtnText.innerText = "Đang mô phỏng...";
+led_red = _TrafficLed('red')
+led_yellow = _TrafficLed('yellow')
+led_green = _TrafficLed('green')
 
-      const hasRed = code.includes("led_red.on()");
-      const hasYellow = code.includes("led_yellow.on()");
-      const hasGreen = code.includes("led_green.on()");
+def sleep(sec):
+    __stem_actions.append(('sleep', sec))
 
-      if (!hasRed || !hasYellow || !hasGreen) {
-        studentTasksState[curTask.id].failCount += 1;
-        appendBotMessage("⚠️ Chu kỳ đèn giao thông cần điều khiển đủ 3 đèn (led_red, led_yellow, led_green).");
-        runBtnText.innerText = "Kiểm tra & Chấm bài";
-        return;
-      }
+def morse_dot():
+    __stem_actions.append(('morse_dot', 1))
+
+def morse_dash():
+    __stem_actions.append(('morse_dash', 1))
+`;
+
+      const stemPostamble = `
+print("\\n__STEM_TRACE__:" + ",".join([str(a[0]) + ":" + str(a[1]) for a in __stem_actions]))
+`;
+
+      const codeToRun = stemPreamble + "\n" + code + "\n" + stemPostamble;
 
       try {
-        activateLed('red');
-        await new Promise(r => setTimeout(r, 1500));
-        activateLed('yellow');
-        await new Promise(r => setTimeout(r, 1000));
-        activateLed('green');
-        await new Promise(r => setTimeout(r, 1500));
-        resetLeds();
+        await Sk.misceval.asyncToPromise(() => Sk.importMainWithBody("<stdin>", false, codeToRun, true))
+          .then(async () => {
+            // Lấy danh sách hành vi STEM từ trace
+            let actions = [];
+            const traceIndex = fullExecutionBuffer.indexOf("__STEM_TRACE__:");
+            if (traceIndex !== -1) {
+              const traceStr = fullExecutionBuffer.substring(traceIndex + 15).trim().split("\n")[0];
+              if (traceStr) {
+                actions = traceStr.split(",").map(item => {
+                  const parts = item.split(":");
+                  return { type: parts[0], val: parts[1] };
+                });
+              }
+            }
 
-        studentTasksState[curTask.id].passed = true;
-        studentTasksState[curTask.id].failCount = 0;
-        studentTasksState[curTask.id].lastError = null;
-        renderTaskList();
-        syncToFirebase("coding");
-        appendBotMessage(`🎉 <b>XUẤT SẮC!</b> Mô hình đèn giao thông đã chạy chuẩn chu kỳ.`);
+            // Xử lý bài STEM: Đèn giao thông
+            if (taskType === "stem_traffic" || taskType === "stem") {
+              await processTrafficEvaluation(actions, curTask, consoleEl);
+            }
+            // Xử lý bài STEM: Mã Morse
+            else if (taskType === "stem_morse") {
+              await processMorseEvaluation(actions, curTask, consoleEl);
+            }
+            // Xử lý bài Lập trình thuật toán thông thường
+            else {
+              processAlgorithmEvaluation(terminalOutput, curTask, consoleEl);
+            }
+          })
+          .catch(err => {
+            handleExecutionError(err, curTask, consoleEl);
+          });
       } catch (e) {
-        console.error(e);
+        handleExecutionError(e, curTask, consoleEl);
       } finally {
         runBtnText.innerText = "Kiểm tra & Chấm bài";
+        runBtn.classList.remove("opacity-75", "pointer-events-none");
       }
     }
 
-    async function runMorseSimulation(code, curTask) {
-      const runBtnText = document.getElementById("runBtnText");
-      runBtnText.innerText = "Đang phát SOS...";
+    async function processTrafficEvaluation(actions, curTask, consoleEl) {
+      consoleEl.innerText += "\n[MÔ PHỎNG STEM]: Đang kích hoạt vi điều khiển ngã tư...\n";
+      const onLeds = actions.filter(a => a.type === "led_on").map(a => a.val);
+
+      // Diễn hoạt đèn sáng theo đúng thứ tự code của học sinh
+      for (const act of actions) {
+        if (act.type === "led_on") {
+          activateLed(act.val);
+          await new Promise(r => setTimeout(r, 700));
+        } else if (act.type === "sleep") {
+          const waitTime = Math.min(parseFloat(act.val) || 1, 3) * 600;
+          await new Promise(r => setTimeout(r, waitTime));
+        } else if (act.type === "led_off") {
+          resetLeds();
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }
+      resetLeds();
+
+      // Kiểm tra chu kỳ chuẩn: Đỏ -> Vàng -> Xanh
+      const isSequenceValid = onLeds.length >= 3 && onLeds[0] === "red" && onLeds[1] === "yellow" && onLeds[2] === "green";
+
+      if (isSequenceValid) {
+        consoleEl.innerText += "\n[CHÍNH XÁC] Chu kỳ đèn (Đỏ ➔ Vàng ➔ Xanh) chạy hoàn hảo!";
+        markTaskPassed(curTask, "🎉 <b>XUẤT SẮC!</b> Mô hình đèn giao thông đã chạy chuẩn chu kỳ.");
+      } else {
+        let msg = "Chu kỳ đèn chưa đúng.";
+        if (onLeds.length < 3) {
+          msg = "Em cần điều khiển đủ cả 3 đèn: led_red.on(), led_yellow.on(), led_green.on().";
+        } else {
+          msg = `Thứ tự đèn em vừa gọi: [${onLeds.join(" ➔ ")}]. Thứ tự chuẩn phải là: [red ➔ yellow ➔ green].`;
+        }
+        consoleEl.innerText += `\n[CHƯA ĐẠT]: ${msg}`;
+        markTaskFailed(curTask, msg);
+      }
+    }
+
+    async function processMorseEvaluation(actions, curTask, consoleEl) {
+      consoleEl.innerText += "\n[MÔ PHỎNG STEM]: Đang phát tín hiệu SOS trên đèn D10...\n";
       const signalText = document.getElementById("morseLiveSignal");
       signalText.innerText = "";
 
-      if (code.includes("For i in") || code.includes("For ")) {
-        appendBotMessage("⚠️ <b>Cú pháp:</b> Từ khóa vòng lặp phải là <code>for</code> viết thường em nhé.");
-        runBtnText.innerText = "Kiểm tra & Chấm bài";
-        return;
+      const dots = actions.filter(a => a.type === "morse_dot").length;
+      const dashes = actions.filter(a => a.type === "morse_dash").length;
+
+      // Diễn hoạt nhấp nháy đèn theo đúng hành vi học sinh lập trình
+      for (const act of actions) {
+        if (act.type === "morse_dot") {
+          await flashMorse("dot");
+        } else if (act.type === "morse_dash") {
+          await flashMorse("dash");
+        }
       }
 
-      const hasDot = code.includes("morse_dot()");
-      const dashCount = (code.match(/morse_dash\(\)/g) || []).length;
-      const hasDashLoop = (code.includes("range(3)") || code.includes("range(0, 3)")) && code.includes("morse_dash");
+      // Kiểm tra chuẩn SOS: S (3 dots), O (3 dashes), S (3 dots) => 6 dots và 3 dashes
+      const isMorseValid = dots === 6 && dashes === 3;
 
-      if (!hasDot || (!hasDashLoop && dashCount < 3)) {
-        studentTasksState[curTask.id].failCount += 1;
-        appendBotMessage("⚠️ Chữ O trong SOS cần 3 nhịp dài <code>morse_dash()</code>. Em hãy dùng vòng lặp <code>for i in range(3):</code> nhé.");
-        runBtnText.innerText = "Kiểm tra & Chấm bài";
-        return;
+      if (isMorseValid) {
+        consoleEl.innerText += "\n[CHÍNH XÁC] Đã phát đủ chuẩn SOS (3 ngắn - 3 dài - 3 ngắn)!";
+        markTaskPassed(curTask, "🎉 <b>TUYỆT VỜI!</b> Em đã lập trình phát thành công mã cứu nạn SOS.");
+      } else {
+        let msg = `Tín hiệu chưa đủ chuẩn SOS. Hiện tại có ${dots} nhịp ngắn (cần 6) và ${dashes} nhịp dài (cần 3). Hãy dùng vòng lặp for cho chữ O!`;
+        consoleEl.innerText += `\n[CHƯA ĐẠT]: ${msg}`;
+        markTaskFailed(curTask, msg);
+      }
+    }
+
+    function processAlgorithmEvaluation(terminalOutput, curTask, consoleEl) {
+      const cleanOutput = terminalOutput.replace(/\r/g, "").trim();
+      const expected = (curTask.expectedOutput || "").trim();
+
+      const isPassed = expected === "" || cleanOutput === expected || cleanOutput.includes(expected) || cleanOutput.endsWith(expected);
+
+      if (isPassed) {
+        consoleEl.innerText += `\n\n[CHÍNH XÁC] Kết quả đạt yêu cầu bài học!`;
+        markTaskPassed(curTask, `🎉 Chúc mừng em đã hoàn thành <b>${curTask.title.split(":")[0]}</b>! Hãy tiếp tục bài sau.`);
+      } else {
+        consoleEl.innerText += `\n\n[CHƯA ĐÚNG] Kết quả in ra:\n"${cleanOutput}"\n\nKỳ vọng chứa: "${expected}"`;
+        markTaskFailed(curTask, `Kết quả chưa đúng với yêu cầu. Em hãy kiểm tra lại thuật toán nhé!`);
+      }
+    }
+
+    function markTaskPassed(curTask, botMessage) {
+      studentTasksState[curTask.id].passed = true;
+      studentTasksState[curTask.id].failCount = 0;
+      studentTasksState[curTask.id].lastError = null;
+      renderTaskList();
+      syncToFirebase("coding");
+      appendBotMessage(botMessage);
+    }
+
+    function markTaskFailed(curTask, botMessage) {
+      studentTasksState[curTask.id].failCount += 1;
+      syncToFirebase("coding");
+      appendBotMessage(botMessage);
+    }
+
+    function handleExecutionError(err, curTask, consoleEl) {
+      let errMsg = err ? err.toString() : "Lỗi không xác định";
+      let aiHint = "Kiểm tra lại logic và cú pháp các dòng lệnh.";
+
+      if (errMsg.includes("TimeLimitError") || errMsg.includes("time limit")) {
+        errMsg = "TimeLimitError: Chương trình đã chạy quá 8 giây. Rất có thể em đã tạo một vòng lặp vô tận (while True không có lệnh dừng hoặc không tăng biến đếm)!";
+        aiHint = "Hãy kiểm tra điều kiện dừng của vòng lặp while và đảm bảo biến đếm được tăng sau mỗi lần lặp (ví dụ: i = i + 1).";
+      } else if (errMsg.includes("IndentationError")) {
+        aiHint = "Lỗi thụt lề (IndentationError): Các dòng lệnh nằm trong if/else, for, def cần thụt vào trong bằng phím Tab.";
+      } else if (errMsg.includes("SyntaxError")) {
+        aiHint = "Lỗi cú pháp (SyntaxError): Kiểm tra dấu hai chấm (:) ở cuối dòng lệnh if/for, hoặc dấu đóng mở ngoặc (), nháy kép \"\".";
+      } else if (errMsg.includes("NameError")) {
+        aiHint = "Lỗi tên (NameError): Em đang dùng biến hoặc hàm chưa được khai báo. Chú ý Python phân biệt HOA và thường (ví dụ: 'for' chứ không phải 'For').";
+      } else if (errMsg.includes("ValueError")) {
+        aiHint = "Lỗi giá trị (ValueError): Hàm int() yêu cầu chuỗi nhập vào phải là các chữ số hợp lệ.";
       }
 
-      try {
-        for (let i = 0; i < 3; i++) await flashMorse('dot');
-        await new Promise(r => setTimeout(r, 350));
-        for (let i = 0; i < 3; i++) await flashMorse('dash');
-        await new Promise(r => setTimeout(r, 350));
-        for (let i = 0; i < 3; i++) await flashMorse('dot');
-
-        studentTasksState[curTask.id].passed = true;
-        studentTasksState[curTask.id].failCount = 0;
-        studentTasksState[curTask.id].lastError = null;
-        renderTaskList();
-        syncToFirebase("coding");
-        appendBotMessage("🎉 <b>TUYỆT VỜI!</b> Em đã lập trình phát thành công mã cứu nạn SOS.");
-      } catch (e) {
-        console.error(e);
-      } finally {
-        runBtnText.innerText = "Kiểm tra & Chấm bài";
-      }
+      consoleEl.innerText += "\n[LỖI THỰC THI]: " + errMsg;
+      studentTasksState[curTask.id].failCount += 1;
+      studentTasksState[curTask.id].lastError = { msg: errMsg, hint: aiHint };
+      syncToFirebase(studentTasksState[curTask.id].failCount >= 3 ? "stuck" : "coding");
+      appendBotMessage(`⚠️ <b>Lỗi:</b> ${errMsg}<br><br>💡 <i>Gợi ý: ${aiHint}</i>`);
     }
 
     function syncToFirebase(currentStatus) {
