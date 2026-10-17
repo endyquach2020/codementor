@@ -34,9 +34,9 @@
     }
     .gutter-lines {
       user-select: none;
-      color: #475569;
-      background-color: #040c10;
-      border-right: 1px solid #132e35;
+      color: #94a3b8;
+      background-color: #f8fafc;
+      border-right: 1px solid #e2e8f0;
       text-align: right;
       padding: 8px 6px 8px 2px;
       overflow: hidden;
@@ -44,14 +44,14 @@
       flex-shrink: 0;
     }
     ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.4);
+      background: #f1f5f9;
     }
     ::-webkit-scrollbar-thumb {
-      background: #1e3a40;
+      background: #cbd5e1;
       border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
@@ -60,256 +60,259 @@
     /* Hiệu ứng đèn LED */
     .led-light {
       transition: all 0.2s ease;
-      opacity: 0.2;
+      opacity: 0.35;
     }
     .led-red-active {
       opacity: 1 !important;
       background-color: #ef4444 !important;
-      box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.6), inset 0 0 8px #fca5a5;
+      box-shadow: 0 0 16px 3px rgba(239, 68, 68, 0.7);
     }
     .led-yellow-active {
       opacity: 1 !important;
       background-color: #eab308 !important;
-      box-shadow: 0 0 20px 4px rgba(234, 179, 8, 0.6), inset 0 0 8px #fef08a;
+      box-shadow: 0 0 16px 3px rgba(234, 179, 8, 0.7);
     }
     .led-green-active {
       opacity: 1 !important;
-      background-color: #14b8a6 !important;
-      box-shadow: 0 0 20px 4px rgba(20, 184, 166, 0.7), inset 0 0 8px #99f6e4;
+      background-color: #0d9488 !important;
+      box-shadow: 0 0 16px 3px rgba(13, 148, 136, 0.8);
     }
     .morse-active {
       opacity: 1 !important;
       background-color: #ef4444 !important;
-      border-color: #fca5a5 !important;
-      box-shadow: 0 0 25px 8px rgba(239, 68, 68, 0.8), inset 0 0 10px #ffffff;
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 20px 6px rgba(239, 68, 68, 0.8);
       color: #ffffff !important;
     }
   </style>
 </head>
 
-<body class="bg-[#04090d] text-slate-200 h-screen flex flex-col font-sans overflow-hidden select-none">
+<body class="bg-[#f0f4f8] text-slate-700 h-screen flex flex-col font-sans overflow-hidden select-none">
 
   <!-- Modal Đăng nhập Trạm máy -->
-  <div id="loginModal" class="fixed inset-0 bg-[#04090d]/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-teal-900/40 p-6 rounded-xl max-w-md w-full shadow-xl space-y-4">
+  <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 p-6 rounded-xl max-w-md w-full shadow-2xl space-y-4">
       <div class="text-center">
-        <div class="w-12 h-12 bg-teal-600/20 text-teal-400 border border-teal-500/30 rounded-xl mx-auto flex items-center justify-center mb-2">
+        <div class="w-12 h-12 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl mx-auto flex items-center justify-center mb-2">
           <i data-lucide="laptop" class="w-6 h-6"></i>
         </div>
-        <h2 class="text-base font-bold text-white">Điểm danh Trạm Thực Hành</h2>
-        <p class="text-xs text-slate-400 mt-1">Chọn số máy và nhập họ tên để đồng bộ kết quả</p>
+        <h2 class="text-base font-bold text-slate-800">Điểm danh Trạm Thực Hành</h2>
+        <p class="text-xs text-slate-500 mt-1">Chọn số máy và nhập họ tên để nhận nhiệm vụ</p>
       </div>
 
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-slate-300 font-medium mb-1">Số máy (PC-01 đến PC-45):</label>
-          <select id="pcNumberSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-teal-500"></select>
+          <label class="block text-slate-700 font-semibold mb-1">Số máy (PC-01 đến PC-45):</label>
+          <select id="pcNumberSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:border-teal-700"></select>
         </div>
         <div>
-          <label class="block text-slate-300 font-medium mb-1">Họ và tên học sinh:</label>
-          <input type="text" id="studentNameInput" placeholder="Ví dụ: Trần Minh Bảo" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-teal-500" />
+          <label class="block text-slate-700 font-semibold mb-1">Họ và tên học sinh:</label>
+          <input type="text" id="studentNameInput" placeholder="Ví dụ: Trần Minh Bảo" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:border-teal-700" />
         </div>
-        <button onclick="confirmStudentLogin()" class="w-full py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg transition duration-150">
+        <button onclick="confirmStudentLogin()" class="w-full py-2.5 bg-[#0d7665] hover:bg-[#0b6355] text-white font-bold rounded-lg transition shadow-sm">
           Vào phòng học & Nhận bài
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Header thanh mảnh tông Teal -->
-  <header class="bg-slate-900/90 border-b border-teal-950/80 px-4 h-13 py-2 flex items-center justify-between flex-shrink-0 z-30">
+  <!-- Header phong cách TKB Optimizer (Deep Teal) -->
+  <header class="bg-[#0d7665] text-white px-4 h-13 py-2 flex items-center justify-between flex-shrink-0 z-30 shadow-sm">
     <div class="flex items-center space-x-3">
-      <div class="w-8 h-8 rounded-lg bg-teal-600/20 border border-teal-500/30 flex items-center justify-center font-bold text-teal-400">
+      <div class="w-8 h-8 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center font-bold text-white">
         <i data-lucide="cpu" class="w-4 h-4"></i>
       </div>
       <div>
         <div class="flex items-center space-x-2">
-          <h1 class="text-xs sm:text-sm font-semibold text-white tracking-wide">CodeMentor-AI <span class="text-teal-400">|</span> Trạm Học Sinh</h1>
-          <span id="currentStationBadge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30">PC-??</span>
+          <h1 class="text-xs sm:text-sm font-bold text-white tracking-wide uppercase">CodeMentor-AI | Trạm Thực Hành</h1>
+          <span id="currentStationBadge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white text-[#0d7665] shadow-xs">PC-??</span>
         </div>
-        <p class="text-[11px] text-slate-400">Học sinh: <span id="currentStudentName" class="text-teal-200 font-medium">Chưa đăng nhập</span></p>
+        <p class="text-[11px] text-teal-100">Học sinh: <span id="currentStudentName" class="text-white font-semibold">Chưa đăng nhập</span></p>
       </div>
     </div>
 
     <div class="flex items-center space-x-2.5">
-      <div class="text-xs px-2.5 py-1 bg-slate-950 border border-slate-800 rounded-lg text-slate-300">
-        Tiến độ: <span id="studentProgressText" class="font-bold text-teal-400">0/0 Đạt</span>
+      <div class="text-xs px-2.5 py-1 bg-white/10 border border-white/20 rounded-lg text-white">
+        Tiến độ: <span id="studentProgressText" class="font-bold text-teal-200">0/0 Đạt</span>
       </div>
-      <input type="password" id="studentApiKey" placeholder="Gemini API Key..." class="text-xs px-2.5 py-1 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 w-36 sm:w-44 focus:outline-none focus:border-teal-500" />
-      <button onclick="runAndGradeCode()" id="runBtn" class="px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs flex items-center space-x-1.5 transition cursor-pointer">
-        <i data-lucide="play" class="w-3.5 h-3.5"></i>
-        <span id="runBtnText">Chạy & Chấm bài</span>
+      <input type="password" id="studentApiKey" placeholder="Gemini API Key..." class="text-xs px-2.5 py-1 bg-white/95 border border-teal-800 rounded-lg text-slate-800 placeholder-slate-400 w-36 sm:w-44 focus:outline-none focus:ring-2 focus:ring-teal-300" />
+      <button onclick="runAndGradeCode()" id="runBtn" class="px-4 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-[#0d7665] font-bold text-xs flex items-center space-x-1.5 transition shadow-sm cursor-pointer">
+        <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+        <span id="runBtnText">Kiểm tra & Chấm bài</span>
       </button>
     </div>
   </header>
 
-  <!-- Workspace Container -->
+  <!-- Workspace Container nền sáng xám -->
   <main class="flex-1 p-3 grid grid-cols-1 lg:grid-cols-12 gap-3 max-w-[1800px] w-full mx-auto min-h-0 overflow-hidden">
     
-    <!-- CỘT 1: ĐỀ BÀI (3 cols) -->
-    <section class="lg:col-span-3 bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col h-full overflow-hidden min-h-0">
-      <div class="px-3.5 py-2.5 border-b border-slate-800 flex items-center space-x-2 text-teal-400 flex-shrink-0 bg-slate-900">
-        <i data-lucide="list-checks" class="w-4 h-4"></i>
-        <h2 class="font-bold uppercase tracking-wider text-slate-300 text-xs">Nhiệm vụ tiết học</h2>
+    <!-- CỘT 1: NHIỆM VỤ TIẾT HỌC (3 cols) -->
+    <section class="lg:col-span-3 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col h-full overflow-hidden min-h-0">
+      <div class="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between flex-shrink-0 bg-slate-50">
+        <div class="flex items-center space-x-2 text-[#0d7665]">
+          <i data-lucide="list-checks" class="w-4 h-4"></i>
+          <h2 class="font-bold uppercase tracking-wider text-xs">Nhiệm vụ tiết học</h2>
+        </div>
+        <span class="text-[10px] text-slate-400 font-medium">Quy chuẩn</span>
       </div>
 
-      <div class="p-2 border-b border-slate-800/60 flex-shrink-0">
+      <div class="p-2 border-b border-slate-100 flex-shrink-0 bg-white">
         <div class="flex flex-col space-y-1" id="taskTabList"></div>
       </div>
 
-      <div class="flex-1 p-3 overflow-y-auto text-xs space-y-2.5 min-h-0 bg-[#040a0e]/40">
+      <div class="flex-1 p-3 overflow-y-auto text-xs space-y-3 min-h-0 bg-white">
         <div class="flex items-center space-x-2">
-          <span id="taskTypeBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30">LẬP TRÌNH</span>
-          <h3 class="font-bold text-white text-sm" id="taskTitle">Đang tải nhiệm vụ...</h3>
+          <span id="taskTypeBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">LẬP TRÌNH</span>
+          <h3 class="font-bold text-slate-900 text-sm" id="taskTitle">Đang tải nhiệm vụ...</h3>
         </div>
-        <p class="text-slate-400 leading-relaxed" id="taskDesc"></p>
+        <p class="text-slate-600 leading-relaxed text-xs" id="taskDesc"></p>
 
-        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-          <span class="text-[10px] uppercase font-bold text-slate-500 block mb-1">Quy cách & Minh họa:</span>
-          <div class="text-slate-300 font-mono text-[11px]" id="taskSample"></div>
+        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+          <span class="text-[10px] uppercase font-bold text-slate-500 block mb-1">Mẫu dữ liệu & Minh họa:</span>
+          <div class="text-slate-800 font-mono text-[11px]" id="taskSample"></div>
         </div>
 
-        <div class="bg-teal-950/20 border border-teal-900/30 rounded-lg p-2 text-[11px] text-teal-300 leading-relaxed">
-          <p class="font-semibold text-teal-200 mb-0.5 flex items-center">
-            <i data-lucide="shield-alert" class="w-3 h-3 mr-1 text-teal-400"></i> Quy chuẩn Socratic:
+        <div class="bg-teal-50/70 border border-teal-200 rounded-lg p-2.5 text-[11px] text-[#0d7665] leading-relaxed">
+          <p class="font-bold mb-0.5 flex items-center text-teal-900">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5 mr-1 text-[#0d7665]"></i> Quy chuẩn Socratic:
           </p>
           Thầy AI hỗ trợ phân tích bản chất thuật toán và chu kỳ vật lý, không đưa mã nguồn giải hộ.
         </div>
       </div>
 
-      <div class="p-2 border-t border-slate-800 flex-shrink-0 bg-slate-900">
-        <button onclick="resetTaskCode()" class="w-full py-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
-          <i data-lucide="rotate-ccw" class="w-3 h-3 text-slate-400"></i>
+      <div class="p-2 border-t border-slate-100 flex-shrink-0 bg-slate-50">
+        <button onclick="resetTaskCode()" class="w-full py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
+          <i data-lucide="rotate-ccw" class="w-3 h-3 text-slate-500"></i>
           <span>Khôi phục code mẫu</span>
         </button>
       </div>
     </section>
 
-    <!-- CỘT 2: EDITOR & STEM SIMULATOR / TERMINAL (5 cols) -->
+    <!-- CỘT 2: CODE EDITOR & STEM / TERMINAL (5 cols) -->
     <section class="lg:col-span-5 flex flex-col space-y-3 h-full min-h-0 overflow-hidden">
       <!-- Editor Box -->
-      <div class="bg-slate-900 border border-slate-800/80 rounded-xl flex-1 flex flex-col overflow-hidden min-h-0">
-        <div class="bg-slate-900 border-b border-slate-800 px-3.5 py-2 flex items-center justify-between flex-shrink-0">
+      <div class="bg-white border border-slate-200 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden min-h-0">
+        <div class="bg-slate-50 border-b border-slate-200 px-3.5 py-2 flex items-center justify-between flex-shrink-0">
           <div class="flex items-center space-x-2">
-            <i data-lucide="file-code-2" class="w-4 h-4 text-teal-400"></i>
-            <span class="text-xs font-mono font-semibold text-slate-200" id="currentFileName">task_1.py</span>
+            <i data-lucide="file-code-2" class="w-4 h-4 text-[#0d7665]"></i>
+            <span class="text-xs font-mono font-bold text-slate-800" id="currentFileName">task_1.py</span>
           </div>
-          <span class="text-[11px] text-slate-400 font-mono" id="engineTypeBadge">Python 3.x In-Browser</span>
+          <span class="text-[11px] text-slate-500 font-mono bg-white px-2 py-0.5 border border-slate-200 rounded" id="engineTypeBadge">Python 3.x In-Browser</span>
         </div>
 
-        <!-- Khung soạn thảo tích hợp Cột số dòng bên trái -->
-        <div class="flex-1 bg-[#040a0e] flex min-h-0 overflow-hidden relative">
+        <!-- Khung soạn thảo sáng rõ -->
+        <div class="flex-1 bg-white flex min-h-0 overflow-hidden relative">
           <div id="lineNumbers" class="gutter-lines editor-font">1</div>
-          <textarea id="codeEditor" oninput="handleEditorInput()" onscroll="syncEditorScroll()" spellcheck="false" class="code-editor editor-font flex-1 p-2 bg-transparent text-teal-300 focus:outline-none resize-none overflow-y-auto"></textarea>
+          <textarea id="codeEditor" oninput="handleEditorInput()" onscroll="syncEditorScroll()" spellcheck="false" class="code-editor editor-font flex-1 p-2 bg-transparent text-slate-900 focus:outline-none resize-none overflow-y-auto"></textarea>
         </div>
       </div>
 
       <!-- KHUNG STEM 1: MÔ HÌNH ĐÈN GIAO THÔNG -->
-      <div id="stemTrafficBox" class="h-44 bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col overflow-hidden flex-shrink-0 hidden">
-        <div class="bg-slate-900 border-b border-slate-800 px-3.5 py-1.5 flex items-center justify-between flex-shrink-0">
+      <div id="stemTrafficBox" class="h-44 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden flex-shrink-0 hidden">
+        <div class="bg-slate-50 border-b border-slate-200 px-3.5 py-1.5 flex items-center justify-between flex-shrink-0">
           <div class="flex items-center space-x-2">
-            <i data-lucide="cpu" class="w-4 h-4 text-teal-400"></i>
-            <span class="text-xs font-semibold uppercase tracking-wider text-teal-300">Mô hình STEM: Đèn Giao Thông Ngã Tư</span>
+            <i data-lucide="cpu" class="w-4 h-4 text-[#0d7665]"></i>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-800">Mô hình STEM: Đèn Giao Thông Ngã Tư</span>
           </div>
-          <span class="text-[10px] bg-teal-500/10 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30">Mô phỏng IoT</span>
+          <span class="text-[10px] bg-teal-50 text-[#0d7665] font-semibold px-2 py-0.5 rounded border border-teal-200">Mô phỏng IoT</span>
         </div>
-        <div class="flex-1 bg-[#040a0e] p-3 flex items-center justify-around">
-          <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex space-x-3 items-center">
+        <div class="flex-1 bg-slate-50/50 p-3 flex items-center justify-around">
+          <div class="bg-white p-2.5 rounded-xl border border-slate-200 flex space-x-3 items-center shadow-xs">
             <div class="flex flex-col items-center space-y-1">
-              <div id="ledRed" class="w-10 h-10 rounded-full bg-red-950/80 border border-red-900 led-light flex items-center justify-center font-bold text-[10px] text-red-200">ĐỎ</div>
-              <span class="text-[9px] text-slate-400 font-mono">D13</span>
+              <div id="ledRed" class="w-10 h-10 rounded-full bg-red-200 border border-red-300 led-light flex items-center justify-center font-bold text-[10px] text-red-700">ĐỎ</div>
+              <span class="text-[9px] text-slate-500 font-mono">D13</span>
             </div>
             <div class="flex flex-col items-center space-y-1">
-              <div id="ledYellow" class="w-10 h-10 rounded-full bg-yellow-950/80 border border-yellow-900 led-light flex items-center justify-center font-bold text-[10px] text-yellow-200">VÀNG</div>
-              <span class="text-[9px] text-slate-400 font-mono">D12</span>
+              <div id="ledYellow" class="w-10 h-10 rounded-full bg-yellow-200 border border-yellow-300 led-light flex items-center justify-center font-bold text-[10px] text-yellow-800">VÀNG</div>
+              <span class="text-[9px] text-slate-500 font-mono">D12</span>
             </div>
             <div class="flex flex-col items-center space-y-1">
-              <div id="ledGreen" class="w-10 h-10 rounded-full bg-teal-950/80 border border-teal-900 led-light flex items-center justify-center font-bold text-[10px] text-teal-200">XANH</div>
-              <span class="text-[9px] text-slate-400 font-mono">D11</span>
+              <div id="ledGreen" class="w-10 h-10 rounded-full bg-teal-200 border border-teal-300 led-light flex items-center justify-center font-bold text-[10px] text-teal-800">XANH</div>
+              <span class="text-[9px] text-slate-500 font-mono">D11</span>
             </div>
           </div>
-          <div class="text-xs space-y-1.5 text-slate-400">
+          <div class="text-xs space-y-1 text-slate-600">
             <div class="flex items-center space-x-2">
               <span>Trạng thái LED:</span>
-              <span id="stemCurrentStateText" class="font-bold text-slate-300">Đã tắt đèn</span>
+              <span id="stemCurrentStateText" class="font-bold text-slate-700">Đã tắt đèn</span>
             </div>
-            <div class="text-[11px] text-slate-500">Chu kỳ: <b class="text-red-400">Đỏ</b> ➔ <b class="text-yellow-400">Vàng</b> ➔ <b class="text-teal-400">Xanh</b></div>
-            <div class="text-[10px] text-teal-400 font-mono">Hàm: led_red.on(), sleep(2)</div>
+            <div class="text-[11px] text-slate-500">Chu kỳ: <b class="text-red-600">Đỏ</b> ➔ <b class="text-yellow-600">Vàng</b> ➔ <b class="text-teal-700">Xanh</b></div>
+            <div class="text-[10px] text-[#0d7665] font-mono font-semibold">Hàm: led_red.on(), sleep(2)</div>
           </div>
         </div>
       </div>
 
       <!-- KHUNG STEM 2: MÔ HÌNH MÃ MORSE SOS -->
-      <div id="stemMorseBox" class="h-44 bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col overflow-hidden flex-shrink-0 hidden">
-        <div class="bg-slate-900 border-b border-slate-800 px-3.5 py-1.5 flex items-center justify-between flex-shrink-0">
+      <div id="stemMorseBox" class="h-44 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden flex-shrink-0 hidden">
+        <div class="bg-slate-50 border-b border-slate-200 px-3.5 py-1.5 flex items-center justify-between flex-shrink-0">
           <div class="flex items-center space-x-2">
-            <i data-lucide="radio" class="w-4 h-4 text-teal-400 animate-pulse"></i>
-            <span class="text-xs font-semibold uppercase tracking-wider text-teal-300">Trạm Tín Hiệu Cứu Hộ Khẩn Cấp (Morse)</span>
+            <i data-lucide="radio" class="w-4 h-4 text-red-600 animate-pulse"></i>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-800">Trạm Tín Hiệu Cứu Hộ Khẩn Cấp (Morse)</span>
           </div>
-          <span class="text-[10px] bg-red-500/10 text-red-300 px-2 py-0.5 rounded border border-red-500/30">Chuẩn Hàng Hải SOS</span>
+          <span class="text-[10px] bg-red-50 text-red-700 font-semibold px-2 py-0.5 rounded border border-red-200">Chuẩn Hàng Hải SOS</span>
         </div>
-        <div class="flex-1 bg-[#040a0e] p-3 flex items-center justify-around">
+        <div class="flex-1 bg-slate-50/50 p-3 flex items-center justify-around">
           <div class="flex flex-col items-center space-y-1.5">
-            <div id="morseLed" class="w-12 h-12 rounded-full bg-red-950/80 border-2 border-red-900 flex items-center justify-center font-bold text-xs text-red-200 transition-all duration-150">
+            <div id="morseLed" class="w-12 h-12 rounded-full bg-red-100 border-2 border-red-300 flex items-center justify-center font-bold text-xs text-red-700 transition-all duration-150">
               SOS
             </div>
-            <span class="text-[10px] text-slate-400 font-mono">ĐÈN D10</span>
+            <span class="text-[10px] text-slate-500 font-mono">ĐÈN D10</span>
           </div>
-          <div class="text-xs space-y-1.5 text-slate-300">
+          <div class="text-xs space-y-1 text-slate-700">
             <div class="flex items-center space-x-2">
               <span>Chuỗi xung phát:</span>
-              <span id="morseLiveSignal" class="font-mono font-bold text-teal-400 text-sm tracking-widest">[ Chờ phát... ]</span>
+              <span id="morseLiveSignal" class="font-mono font-bold text-[#0d7665] text-sm tracking-widest">[ Chờ phát... ]</span>
             </div>
-            <div class="text-[11px] text-slate-400">Quy chuẩn: <b>S ( · · · )</b> | <b>O ( — — — )</b> | <b>S ( · · · )</b></div>
-            <div class="text-[10px] text-teal-400 font-mono">Hàm: morse_dot(), morse_dash()</div>
+            <div class="text-[11px] text-slate-500">Quy chuẩn: <b>S ( · · · )</b> | <b>O ( — — — )</b> | <b>S ( · · · )</b></div>
+            <div class="text-[10px] text-[#0d7665] font-mono font-semibold">Hàm: morse_dot(), morse_dash()</div>
           </div>
         </div>
       </div>
 
       <!-- Terminal Output -->
-      <div id="terminalBox" class="h-40 bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col overflow-hidden flex-shrink-0">
-        <div class="bg-slate-900 border-b border-slate-800 px-3.5 py-1.5 flex items-center justify-between flex-shrink-0">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Terminal & Kết quả Testcase</span>
+      <div id="terminalBox" class="h-40 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden flex-shrink-0">
+        <div class="bg-slate-50 border-b border-slate-200 px-3.5 py-1.5 flex items-center justify-between flex-shrink-0">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Terminal & Kết quả Testcase</span>
         </div>
-        <pre id="outputConsole" class="p-2.5 flex-1 bg-[#040a0e] text-slate-300 font-mono text-xs overflow-y-auto whitespace-pre-wrap leading-relaxed">Bấm "Chạy & Chấm bài" để kiểm tra kết quả...</pre>
+        <pre id="outputConsole" class="p-2.5 flex-1 bg-slate-900 text-emerald-400 font-mono text-xs overflow-y-auto whitespace-pre-wrap leading-relaxed">Bấm "Kiểm tra & Chấm bài" để nhận kết quả đánh giá...</pre>
       </div>
     </section>
 
     <!-- CỘT 3: TRỢ LÝ SOCRATIC AI (4 cols) -->
-    <section class="lg:col-span-4 bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col h-full overflow-hidden min-h-0">
-      <div class="bg-slate-900 border-b border-slate-800 px-3.5 py-2.5 flex items-center justify-between flex-shrink-0">
+    <section class="lg:col-span-4 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col h-full overflow-hidden min-h-0">
+      <div class="bg-slate-50 border-b border-slate-200 px-3.5 py-2.5 flex items-center justify-between flex-shrink-0">
         <div class="flex items-center space-x-2">
-          <div class="w-7 h-7 rounded-lg bg-teal-600/20 border border-teal-500/30 flex items-center justify-center text-teal-400">
+          <div class="w-7 h-7 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-[#0d7665]">
             <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
           </div>
           <div>
-            <h3 class="text-xs font-semibold text-white">Gia Sư Gợi Mở (Socratic AI)</h3>
-            <p class="text-[10px] text-teal-400">Đồng hành tư duy cùng học sinh</p>
+            <h3 class="text-xs font-bold text-slate-800">Gia Sư Gợi Mở (Socratic AI)</h3>
+            <p class="text-[10px] text-[#0d7665] font-medium">Đồng hành tư duy cùng học sinh</p>
           </div>
         </div>
       </div>
 
-      <div id="chatHistory" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-[#040a0e]/40 text-xs min-h-0">
+      <div id="chatHistory" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-slate-50/40 text-xs min-h-0">
         <div class="flex items-start space-x-2">
-          <div class="w-6 h-6 rounded-lg bg-teal-600/20 border border-teal-500/30 flex items-center justify-center text-teal-300 text-[10px] font-bold flex-shrink-0 mt-0.5">AI</div>
-          <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-slate-300 leading-relaxed">
+          <div class="w-6 h-6 rounded-lg bg-teal-100 text-[#0d7665] flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">AI</div>
+          <div class="bg-white border border-slate-200 p-2.5 rounded-lg text-slate-700 leading-relaxed shadow-xs">
             Chào em! Thầy AI đã sẵn sàng. Em hãy chọn bài tập bên trái để giải thuật toán hoặc thực hành các mô hình STEM. Thầy sẽ luôn đồng hành gợi mở giúp em!
           </div>
         </div>
       </div>
 
-      <div class="p-2.5 border-t border-slate-800 bg-slate-900 space-y-2 flex-shrink-0">
+      <div class="p-2.5 border-t border-slate-200 bg-white space-y-2 flex-shrink-0">
         <div class="flex space-x-1.5 overflow-x-auto pb-1 text-[11px]">
-          <button onclick="askQuickPrompt('explain')" class="whitespace-nowrap px-2 py-0.5 bg-slate-800/70 hover:bg-slate-800 text-teal-300 rounded-md border border-slate-700/60">
+          <button onclick="askQuickPrompt('explain')" class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-200 font-medium">
             💡 Giải thích lỗi?
           </button>
-          <button onclick="askQuickPrompt('hint')" class="whitespace-nowrap px-2 py-0.5 bg-slate-800/70 hover:bg-slate-800 text-teal-300 rounded-md border border-slate-700/60">
+          <button onclick="askQuickPrompt('hint')" class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-200 font-medium">
             ❓ Gợi ý bước tiếp?
           </button>
         </div>
         <div class="flex items-center space-x-2">
-          <input type="text" id="studentChatInput" placeholder="Hỏi Thầy AI về bài này..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500" onkeydown="if(event.key === 'Enter') sendStudentChat()" />
-          <button onclick="sendStudentChat()" class="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition duration-150">
+          <input type="text" id="studentChatInput" placeholder="Hỏi Thầy AI về bài này..." class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-[#0d7665]" onkeydown="if(event.key === 'Enter') sendStudentChat()" />
+          <button onclick="sendStudentChat()" class="p-2 bg-[#0d7665] hover:bg-[#0b6355] text-white rounded-lg transition duration-150">
             <i data-lucide="send" class="w-3.5 h-3.5"></i>
           </button>
         </div>
@@ -431,20 +434,20 @@
 
         const btn = document.createElement("button");
         btn.onclick = () => switchTask(idx);
-        btn.className = `p-1.5 rounded-lg text-left flex items-center justify-between text-xs transition border ${
+        btn.className = `p-2 rounded-lg text-left flex items-center justify-between text-xs transition border ${
           isSelected 
-            ? "bg-teal-600/20 border-teal-500/80 text-white font-semibold" 
-            : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+            ? "bg-[#ccfbf1] border-[#0d7665] text-[#0d7665] font-bold shadow-xs" 
+            : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
         }`;
 
         btn.innerHTML = `
           <div class="flex items-center space-x-2 truncate">
             <span class="w-4 h-4 rounded flex items-center justify-center text-[9px] font-mono ${
-              isPassed ? 'bg-teal-500 text-slate-950 font-bold' : (isStem ? 'bg-teal-900/60 text-teal-300' : 'bg-slate-800 text-slate-400')
+              isPassed ? 'bg-[#0d7665] text-white font-bold' : (isStem ? 'bg-teal-100 text-[#0d7665] font-bold' : 'bg-slate-200 text-slate-600')
             }">${idx + 1}</span>
-            <span class="truncate ${isStem ? 'text-teal-200' : ''}">${task.title.split(":")[0]}</span>
+            <span class="truncate">${task.title.split(":")[0]}</span>
           </div>
-          ${isPassed ? '<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-teal-400 flex-shrink-0"></i>' : '<span class="text-[9px] text-slate-500 flex-shrink-0">Chưa đạt</span>'}
+          ${isPassed ? '<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-[#0d7665] flex-shrink-0"></i>' : '<span class="text-[9px] text-slate-400 flex-shrink-0">Chưa đạt</span>'}
         `;
         container.appendChild(btn);
       });
@@ -490,19 +493,19 @@
       if (type === "stem_traffic" || type === "stem") {
         trafficBox.classList.remove("hidden");
         typeBadge.innerText = "DỰ ÁN STEM";
-        typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30";
+        typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-[#0d7665] border border-teal-200";
         engineBadge.innerText = "Virtual Traffic Simulator";
         resetLeds();
       } else if (type === "stem_morse") {
         morseBox.classList.remove("hidden");
         typeBadge.innerText = "DỰ ÁN STEM";
-        typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-300 border border-red-500/30";
+        typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-200";
         engineBadge.innerText = "Virtual Morse Beacon";
         resetMorse();
       } else {
         terminalBox.classList.remove("hidden");
         typeBadge.innerText = "LẬP TRÌNH";
-        typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30";
+        typeBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200";
         engineBadge.innerText = "Python 3.x In-Browser";
       }
     }
@@ -544,34 +547,34 @@
     }
 
     function resetLeds() {
-      document.getElementById("ledRed").className = "w-10 h-10 rounded-full bg-red-950/80 border border-red-900 led-light flex items-center justify-center font-bold text-[10px] text-red-200";
-      document.getElementById("ledYellow").className = "w-10 h-10 rounded-full bg-yellow-950/80 border border-yellow-900 led-light flex items-center justify-center font-bold text-[10px] text-yellow-200";
-      document.getElementById("ledGreen").className = "w-10 h-10 rounded-full bg-teal-950/80 border border-teal-900 led-light flex items-center justify-center font-bold text-[10px] text-teal-200";
+      document.getElementById("ledRed").className = "w-10 h-10 rounded-full bg-red-200 border border-red-300 led-light flex items-center justify-center font-bold text-[10px] text-red-700";
+      document.getElementById("ledYellow").className = "w-10 h-10 rounded-full bg-yellow-200 border border-yellow-300 led-light flex items-center justify-center font-bold text-[10px] text-yellow-800";
+      document.getElementById("ledGreen").className = "w-10 h-10 rounded-full bg-teal-200 border border-teal-300 led-light flex items-center justify-center font-bold text-[10px] text-teal-800";
       document.getElementById("stemCurrentStateText").innerText = "Đã tắt tất cả đèn";
-      document.getElementById("stemCurrentStateText").className = "font-bold text-slate-400";
+      document.getElementById("stemCurrentStateText").className = "font-bold text-slate-500";
     }
 
     function activateLed(color) {
       resetLeds();
       const textEl = document.getElementById("stemCurrentStateText");
       if (color === 'red') {
-        document.getElementById("ledRed").className = "w-10 h-10 rounded-full led-red-active border border-red-400 flex items-center justify-center font-bold text-[10px] text-white";
+        document.getElementById("ledRed").className = "w-10 h-10 rounded-full led-red-active border border-red-500 flex items-center justify-center font-bold text-[10px] text-white";
         textEl.innerText = "ĐÈN ĐỎ ĐANG SÁNG (DỪNG LẠI)";
-        textEl.className = "font-bold text-red-400";
+        textEl.className = "font-bold text-red-600";
       } else if (color === 'yellow') {
-        document.getElementById("ledYellow").className = "w-10 h-10 rounded-full led-yellow-active border border-yellow-300 flex items-center justify-center font-bold text-[10px] text-slate-950";
+        document.getElementById("ledYellow").className = "w-10 h-10 rounded-full led-yellow-active border border-yellow-400 flex items-center justify-center font-bold text-[10px] text-slate-900";
         textEl.innerText = "ĐÈN VÀNG ĐANG SÁNG (GIẢM TỐC)";
-        textEl.className = "font-bold text-yellow-400";
+        textEl.className = "font-bold text-yellow-600";
       } else if (color === 'green') {
-        document.getElementById("ledGreen").className = "w-10 h-10 rounded-full led-green-active border border-teal-300 flex items-center justify-center font-bold text-[10px] text-slate-950 font-extrabold";
+        document.getElementById("ledGreen").className = "w-10 h-10 rounded-full led-green-active border border-teal-400 flex items-center justify-center font-bold text-[10px] text-white font-extrabold";
         textEl.innerText = "ĐÈN XANH ĐANG SÁNG (ĐƯỢC ĐI)";
-        textEl.className = "font-bold text-teal-400";
+        textEl.className = "font-bold text-[#0d7665]";
       }
     }
 
     function resetMorse() {
       const led = document.getElementById("morseLed");
-      led.className = "w-12 h-12 rounded-full bg-red-950/80 border-2 border-red-900 flex items-center justify-center font-bold text-xs text-red-200";
+      led.className = "w-12 h-12 rounded-full bg-red-100 border-2 border-red-300 flex items-center justify-center font-bold text-xs text-red-700";
       document.getElementById("morseLiveSignal").innerText = "[ Chờ phát... ]";
     }
 
@@ -585,7 +588,7 @@
       signalText.innerText += " " + char;
 
       await new Promise(r => setTimeout(r, duration));
-      led.className = "w-12 h-12 rounded-full bg-red-950/80 border-2 border-red-900 flex items-center justify-center font-bold text-xs text-red-200";
+      led.className = "w-12 h-12 rounded-full bg-red-100 border-2 border-red-300 flex items-center justify-center font-bold text-xs text-red-700";
       await new Promise(r => setTimeout(r, 200));
     }
 
@@ -677,7 +680,7 @@ def morse_dash(): pass
       if (!hasRed || !hasYellow || !hasGreen) {
         studentTasksState[curTask.id].failCount += 1;
         appendBotMessage("⚠️ Chu kỳ đèn giao thông cần điều khiển đủ 3 đèn (led_red, led_yellow, led_green).");
-        runBtnText.innerText = "Chạy & Chấm bài";
+        runBtnText.innerText = "Kiểm tra & Chấm bài";
         return;
       }
 
@@ -699,7 +702,7 @@ def morse_dash(): pass
       } catch (e) {
         console.error(e);
       } finally {
-        runBtnText.innerText = "Chạy & Chấm bài";
+        runBtnText.innerText = "Kiểm tra & Chấm bài";
       }
     }
 
@@ -711,7 +714,7 @@ def morse_dash(): pass
 
       if (code.includes("For i in") || code.includes("For ")) {
         appendBotMessage("⚠️ <b>Cú pháp:</b> Từ khóa vòng lặp phải là <code>for</code> viết thường em nhé.");
-        runBtnText.innerText = "Chạy & Chấm bài";
+        runBtnText.innerText = "Kiểm tra & Chấm bài";
         return;
       }
 
@@ -722,7 +725,7 @@ def morse_dash(): pass
       if (!hasDot || (!hasDashLoop && dashCount < 3)) {
         studentTasksState[curTask.id].failCount += 1;
         appendBotMessage("⚠️ Chữ O trong SOS cần 3 nhịp dài <code>morse_dash()</code>. Em hãy dùng vòng lặp <code>for i in range(3):</code> nhé.");
-        runBtnText.innerText = "Chạy & Chấm bài";
+        runBtnText.innerText = "Kiểm tra & Chấm bài";
         return;
       }
 
@@ -742,7 +745,7 @@ def morse_dash(): pass
       } catch (e) {
         console.error(e);
       } finally {
-        runBtnText.innerText = "Chạy & Chấm bài";
+        runBtnText.innerText = "Kiểm tra & Chấm bài";
       }
     }
 
@@ -812,7 +815,7 @@ def morse_dash(): pass
           } else if (type === "stem_traffic") {
             appendBotMessage(`Đèn giao thông: Quan sát xem các hàm <code>on()</code> đã được gọi theo đúng thứ tự đỏ ➔ vàng ➔ xanh chưa.`);
           } else {
-            appendBotMessage(`Thầy đã ghi nhận câu hỏi. Em hãy bấm nút <b>"Chạy & Chấm bài"</b> để xem terminal báo chi tiết nhé!`);
+            appendBotMessage(`Thầy đã ghi nhận câu hỏi. Em hãy bấm nút <b>"Kiểm tra & Chấm bài"</b> để xem kết quả chi tiết nhé!`);
           }
         }, 400);
       }
@@ -853,7 +856,7 @@ def morse_dash(): pass
           return;
         }
         appendUserMessage("Giải thích lỗi vừa gặp?");
-        setTimeout(() => appendBotMessage("Em bấm <b>'Chạy & Chấm bài'</b> để hệ thống kiểm tra chi tiết nhé!"), 200);
+        setTimeout(() => appendBotMessage("Em bấm <b>'Kiểm tra & Chấm bài'</b> để hệ thống kiểm tra chi tiết nhé!"), 200);
       } else {
         appendUserMessage("Gợi ý bước tiếp theo?");
         setTimeout(() => appendBotMessage(`💡 <b>Gợi ý:</b> Hãy quan sát logic điều kiện hoặc thứ tự tuần tự của các câu lệnh từ trên xuống dưới.`), 200);
@@ -864,7 +867,7 @@ def morse_dash(): pass
       const chat = document.getElementById("chatHistory");
       const msgDiv = document.createElement("div");
       msgDiv.className = "flex items-start justify-end space-x-2";
-      msgDiv.innerHTML = `<div class="bg-teal-700 text-white p-2.5 rounded-xl rounded-tr-none text-xs leading-relaxed max-w-[85%]">${text}</div>`;
+      msgDiv.innerHTML = `<div class="bg-[#0d7665] text-white p-2.5 rounded-lg text-xs leading-relaxed max-w-[85%] shadow-xs">${text}</div>`;
       chat.appendChild(msgDiv);
       chat.scrollTop = chat.scrollHeight;
     }
@@ -874,8 +877,8 @@ def morse_dash(): pass
       const msgDiv = document.createElement("div");
       msgDiv.className = "flex items-start space-x-2";
       msgDiv.innerHTML = `
-        <div class="w-6 h-6 rounded-lg bg-teal-600/20 border border-teal-500/30 flex items-center justify-center text-teal-300 text-[10px] font-bold flex-shrink-0 mt-0.5">AI</div>
-        <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-xl rounded-tl-none text-slate-300 leading-relaxed max-w-[90%]">${html}</div>
+        <div class="w-6 h-6 rounded-lg bg-teal-100 text-[#0d7665] flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">AI</div>
+        <div class="bg-white border border-slate-200 p-2.5 rounded-lg text-slate-700 leading-relaxed max-w-[90%] shadow-xs">${html}</div>
       `;
       chat.appendChild(msgDiv);
       chat.scrollTop = chat.scrollHeight;
