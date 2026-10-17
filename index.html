@@ -766,37 +766,29 @@
       // Ngắt sau 8 giây để chống treo tab khi gặp vòng lặp vô tận (while True)
       Sk.execLimit = 8000;
 
-      // Mã tiền xử lý hỗ trợ mô hình STEM & vi điều khiển ảo
-      const stemPreamble = `
-__stem_actions = []
+      // Mã tiền xử lý hỗ trợ mô hình STEM & vi điều khiển ảo (CHỈ nạp khi là bài STEM)
+      let preamble = "";
+      let postamble = "";
+      let preambleLineOffset = 0;
 
+      if (taskType.startsWith("stem")) {
+        preamble = `__stem_actions = []
 class _TrafficLed:
-    def __init__(self, color):
-        self.color = color
-    def on(self):
-        __stem_actions.append(('led_on', self.color))
-    def off(self):
-        __stem_actions.append(('led_off', self.color))
-
+    def __init__(self, color): self.color = color
+    def on(self): __stem_actions.append(('led_on', self.color))
+    def off(self): __stem_actions.append(('led_off', self.color))
 led_red = _TrafficLed('red')
 led_yellow = _TrafficLed('yellow')
 led_green = _TrafficLed('green')
-
-def sleep(sec):
-    __stem_actions.append(('sleep', sec))
-
-def morse_dot():
-    __stem_actions.append(('morse_dot', 1))
-
-def morse_dash():
-    __stem_actions.append(('morse_dash', 1))
+def sleep(sec): __stem_actions.append(('sleep', sec))
+def morse_dot(): __stem_actions.append(('morse_dot', 1))
+def morse_dash(): __stem_actions.append(('morse_dash', 1))
 `;
+        preambleLineOffset = preamble.split("\n").length - 1;
+        postamble = `\nprint("\\n__STEM_TRACE__:" + ",".join([str(a[0]) + ":" + str(a[1]) for a in __stem_actions]))`;
+      }
 
-      const stemPostamble = `
-print("\\n__STEM_TRACE__:" + ",".join([str(a[0]) + ":" + str(a[1]) for a in __stem_actions]))
-`;
-
-      const codeToRun = stemPreamble + "\n" + code + "\n" + stemPostamble;
+      const codeToRun = preamble + code + postamble;
 
       try {
         await Sk.misceval.asyncToPromise(() => Sk.importMainWithBody("<stdin>", false, codeToRun, true))
@@ -828,10 +820,10 @@ print("\\n__STEM_TRACE__:" + ",".join([str(a[0]) + ":" + str(a[1]) for a in __st
             }
           })
           .catch(err => {
-            handleExecutionError(err, curTask, consoleEl);
+            handleExecutionError(err, curTask, consoleEl, preambleLineOffset, code);
           });
       } catch (e) {
-        handleExecutionError(e, curTask, consoleEl);
+        handleExecutionError(e, curTask, consoleEl, preambleLineOffset, code);
       } finally {
         runBtnText.innerText = "Kiểm tra & Chấm bài";
         runBtn.classList.remove("opacity-75", "pointer-events-none");
@@ -935,28 +927,69 @@ print("\\n__STEM_TRACE__:" + ",".join([str(a[0]) + ":" + str(a[1]) for a in __st
       appendBotMessage(botMessage);
     }
 
-    function handleExecutionError(err, curTask, consoleEl) {
-      let errMsg = err ? err.toString() : "Lỗi không xác định";
+    function handleExecutionError(err, curTask, consoleEl, preambleLineOffset, studentCode) {
+      let rawMsg = err ? err.toString() : "Lỗi không xác định";
+
+      // 1. Chuẩn hóa và hiệu chỉnh số dòng chính xác theo editor của học sinh
+      let detectedLine = null;
+      rawMsg = rawMsg.replace(/\b(?:on line|line)\s+(\d+)\b/gi, (match, numStr) => {
+        const rawLine = parseInt(numStr);
+        const actualLine = Math.max(1, rawLine - (preambleLineOffset || 0));
+        detectedLine = actualLine;
+        return `ở dòng ${actualLine}`;
+      });
+
+      const codeLines = (studentCode || "").split("\n");
+      let targetErrorLine = detectedLine;
       let aiHint = "Kiểm tra lại logic và cú pháp các dòng lệnh.";
 
-      if (errMsg.includes("TimeLimitError") || errMsg.includes("time limit")) {
-        errMsg = "TimeLimitError: Chương trình đã chạy quá 8 giây. Rất có thể em đã tạo một vòng lặp vô tận (while True không có lệnh dừng hoặc không tăng biến đếm)!";
+      // 2. Chẩn đoán chi tiết lỗi cú pháp (SyntaxError / bad input / ParseError)
+      if (rawMsg.includes("bad input") || rawMsg.includes("SyntaxError") || rawMsg.includes("ParseError")) {
+        const prevLineIdx = (detectedLine && detectedLine > 1) ? detectedLine - 2 : -1;
+        const curLineIdx = (detectedLine && detectedLine >= 1) ? detectedLine - 1 : -1;
+
+        const prevLineText = prevLineIdx >= 0 ? codeLines[prevLineIdx].trim() : "";
+        const curLineText = curLineIdx >= 0 ? codeLines[curLineIdx].trim() : "";
+        const controlStmtRegex = /\b(for|if|elif|else|while|def|class)\b/;
+
+        // Trường hợp 1: Dòng ngay trước đó thiếu dấu hai chấm (:) ở câu lệnh for/if/while/def
+        if (prevLineText.match(controlStmtRegex) && !prevLineText.endsWith(":") && !prevLineText.startsWith("#")) {
+          targetErrorLine = detectedLine - 1;
+          rawMsg = `SyntaxError: Thiếu dấu hai chấm (:) ở cuối câu lệnh ở dòng ${targetErrorLine}`;
+          aiHint = `Dòng ${targetErrorLine}: Câu lệnh "${prevLineText}" đang thiếu dấu hai chấm (:) ở cuối dòng! Hãy thêm dấu : vào cuối dòng nhé.`;
+        }
+        // Trường hợp 2: Chính dòng đó thiếu dấu hai chấm (:)
+        else if (curLineText.match(controlStmtRegex) && !curLineText.endsWith(":") && !curLineText.startsWith("#")) {
+          targetErrorLine = detectedLine;
+          rawMsg = `SyntaxError: Thiếu dấu hai chấm (:) ở cuối câu lệnh ở dòng ${targetErrorLine}`;
+          aiHint = `Dòng ${targetErrorLine}: Câu lệnh "${curLineText}" đang thiếu dấu hai chấm (:) ở cuối dòng! Hãy thêm dấu : vào cuối dòng nhé.`;
+        }
+        // Trường hợp 3: Mở ngoặc mà chưa đóng ngoặc
+        else if (curLineText.includes("(") && !curLineText.includes(")")) {
+          rawMsg = `SyntaxError: Chưa đóng dấu ngoặc đơn ở dòng ${targetErrorLine}`;
+          aiHint = `Dòng ${targetErrorLine}: Em đang mở ngoặc '(' mà chưa đóng ngoặc ')' tương ứng.`;
+        }
+        // Các trường hợp cú pháp khác
+        else {
+          rawMsg = rawMsg.replace(/bad input/gi, "Cú pháp không hợp lệ (sai ký tự hoặc thiếu dấu)");
+          aiHint = `Kiểm tra dòng ${targetErrorLine || 'vừa sửa'}: Chú ý dấu hai chấm (:) ở cuối lệnh for/if/while, dấu đóng mở ngoặc () hoặc dấu nháy kép "".`;
+        }
+      } else if (rawMsg.includes("TimeLimitError") || rawMsg.includes("time limit")) {
+        rawMsg = "TimeLimitError: Chương trình đã chạy quá 8 giây. Rất có thể em đã tạo một vòng lặp vô tận (while True không có lệnh dừng hoặc không tăng biến đếm)!";
         aiHint = "Hãy kiểm tra điều kiện dừng của vòng lặp while và đảm bảo biến đếm được tăng sau mỗi lần lặp (ví dụ: i = i + 1).";
-      } else if (errMsg.includes("IndentationError")) {
-        aiHint = "Lỗi thụt lề (IndentationError): Các dòng lệnh nằm trong if/else, for, def cần thụt vào trong bằng phím Tab.";
-      } else if (errMsg.includes("SyntaxError")) {
-        aiHint = "Lỗi cú pháp (SyntaxError): Kiểm tra dấu hai chấm (:) ở cuối dòng lệnh if/for, hoặc dấu đóng mở ngoặc (), nháy kép \"\".";
-      } else if (errMsg.includes("NameError")) {
-        aiHint = "Lỗi tên (NameError): Em đang dùng biến hoặc hàm chưa được khai báo. Chú ý Python phân biệt HOA và thường (ví dụ: 'for' chứ không phải 'For').";
-      } else if (errMsg.includes("ValueError")) {
-        aiHint = "Lỗi giá trị (ValueError): Hàm int() yêu cầu chuỗi nhập vào phải là các chữ số hợp lệ.";
+      } else if (rawMsg.includes("IndentationError")) {
+        aiHint = `Lỗi thụt lề ở dòng ${targetErrorLine || ''}: Các câu lệnh con bên trong if/else, for, while, def cần thụt lề vào trong bằng phím Tab.`;
+      } else if (rawMsg.includes("NameError")) {
+        aiHint = `Lỗi tên biến/hàm ở dòng ${targetErrorLine || ''}: Biến hoặc hàm chưa được khai báo hoặc viết sai chính tả (chú ý Python phân biệt HOA và thường).`;
+      } else if (rawMsg.includes("ValueError")) {
+        aiHint = `Lỗi giá trị (ValueError) ở dòng ${targetErrorLine || ''}: Hàm int() yêu cầu chuỗi nhập vào phải là các chữ số hợp lệ.`;
       }
 
-      consoleEl.innerText += "\n[LỖI THỰC THI]: " + errMsg;
+      consoleEl.innerText += "\n[LỖI THỰC THI]: " + rawMsg;
       studentTasksState[curTask.id].failCount += 1;
-      studentTasksState[curTask.id].lastError = { msg: errMsg, hint: aiHint };
+      studentTasksState[curTask.id].lastError = { msg: rawMsg, hint: aiHint };
       syncToFirebase(studentTasksState[curTask.id].failCount >= 3 ? "stuck" : "coding");
-      appendBotMessage(`⚠️ <b>Lỗi:</b> ${errMsg}<br><br>💡 <i>Gợi ý: ${aiHint}</i>`);
+      appendBotMessage(`⚠️ <b>Lỗi:</b> ${rawMsg}<br><br>💡 <i>Gợi ý: ${aiHint}</i>`);
     }
 
     function syncToFirebase(currentStatus) {
