@@ -822,20 +822,20 @@
       let preambleLineOffset = 0;
 
       if (taskType.startsWith("stem") || code.includes("led_") || code.includes("morse_")) {
-        preamble = `__stem_actions = []
+        preamble = `_stem_actions = []
 class _TrafficLed:
     def __init__(self, color): self.color = color
-    def on(self): __stem_actions.append(('led_on', self.color))
-    def off(self): __stem_actions.append(('led_off', self.color))
+    def on(self): _stem_actions.append(('led_on', self.color))
+    def off(self): _stem_actions.append(('led_off', self.color))
 led_red = _TrafficLed('red')
 led_yellow = _TrafficLed('yellow')
 led_green = _TrafficLed('green')
-def sleep(sec): __stem_actions.append(('sleep', sec))
-def morse_dot(): __stem_actions.append(('morse_dot', 1))
-def morse_dash(): __stem_actions.append(('morse_dash', 1))
+def sleep(sec): _stem_actions.append(('sleep', sec))
+def morse_dot(): _stem_actions.append(('morse_dot', 1))
+def morse_dash(): _stem_actions.append(('morse_dash', 1))
 `;
         preambleLineOffset = preamble.split("\n").length - 1;
-        postamble = `\nprint("\\n__STEM_TRACE__:" + ",".join([str(a[0]) + ":" + str(a[1]) for a in __stem_actions]))`;
+        postamble = `\nprint("\\n__STEM_TRACE__:" + ",".join([str(a[0]) + ":" + str(a[1]) for a in _stem_actions]))`;
       }
 
       const codeToRun = preamble + code + postamble;
@@ -982,14 +982,33 @@ def morse_dash(): __stem_actions.append(('morse_dash', 1))
 
       // 1. Chuẩn hóa và hiệu chỉnh số dòng chính xác theo editor của học sinh
       let detectedLine = null;
+      const codeLines = (studentCode || "").split("\n");
+
       rawMsg = rawMsg.replace(/\b(?:on line|line)\s+(\d+)\b/gi, (match, numStr) => {
         const rawLine = parseInt(numStr);
-        const actualLine = Math.max(1, rawLine - (preambleLineOffset || 0));
+        let actualLine = rawLine;
+        if (preambleLineOffset && preambleLineOffset > 0) {
+          actualLine = Math.max(1, rawLine - preambleLineOffset);
+        }
+
+        // Nếu actualLine rơi vào dòng ghi chú (#) hoặc dòng trống, dò tìm dòng lệnh thực tế gần nhất
+        if (actualLine <= codeLines.length) {
+          const lineTrimmed = codeLines[actualLine - 1].trim();
+          if (lineTrimmed.startsWith("#") || lineTrimmed === "") {
+            for (let li = actualLine; li < codeLines.length; li++) {
+              const text = codeLines[li].trim();
+              if (text && !text.startsWith("#")) {
+                actualLine = li + 1;
+                break;
+              }
+            }
+          }
+        }
+
         detectedLine = actualLine;
         return `ở dòng ${actualLine}`;
       });
 
-      const codeLines = (studentCode || "").split("\n");
       let targetErrorLine = detectedLine;
       let aiHint = "Em hãy kiểm tra lại cấu trúc các dòng lệnh vừa viết nhé.";
 
