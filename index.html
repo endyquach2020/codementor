@@ -188,10 +188,14 @@
         </div>
       </div>
 
-      <div class="p-2 border-t border-slate-100 flex-shrink-0 bg-slate-50">
-        <button onclick="resetTaskCode()" class="w-full py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
+      <div class="p-2 border-t border-slate-100 flex-shrink-0 bg-slate-50 space-y-1.5">
+        <button onclick="resetTaskCode()" title="Nạp lại mã mẫu ban đầu cho bài này" class="w-full py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer">
           <i data-lucide="rotate-ccw" class="w-3 h-3 text-slate-500"></i>
-          <span>Khôi phục code mẫu</span>
+          <span>Khôi phục code mẫu bài này</span>
+        </button>
+        <button onclick="resetAllToSystemTemplates()" title="Tải lại toàn bộ 5 bài và mã mẫu chuẩn từ hệ thống" class="w-full py-1 bg-slate-50 hover:bg-teal-50 text-slate-500 hover:text-[#0d7665] border border-dashed border-slate-300 rounded-lg text-[11px] font-medium flex items-center justify-center space-x-1 transition cursor-pointer">
+          <i data-lucide="refresh-cw" class="w-3 h-3 text-[#0d7665]"></i>
+          <span>Nạp lại toàn bộ code mẫu hệ thống</span>
         </button>
       </div>
     </section>
@@ -478,29 +482,46 @@
     }
 
     function listenAssignments() {
-      initTasksState();
+      // 1. Luôn ưu tiên nạp bộ bài tập và code mẫu chuẩn của hệ thống ngay khi khởi động
+      assignments = JSON.parse(JSON.stringify(defaultAssignments));
+      initTasksState(true);
       renderTaskList();
       loadTask(0);
 
+      // 2. Lắng nghe cập nhật từ Firebase Realtime Database
       try {
-        firebase.database().ref("assignments").on("value", snapshot => {
+        const assignmentsRef = firebase.database().ref("assignments");
+        assignmentsRef.on("value", snapshot => {
           const data = snapshot.val();
           if (data && Array.isArray(data) && data.length > 0) {
+            // Kiểm tra xem danh sách bài có thay đổi cấu trúc không
+            const isStructureChanged = assignments.length !== data.length || 
+              assignments.some((t, i) => !data[i] || t.id !== data[i].id);
+
             assignments = data;
-            initTasksState();
+            initTasksState(isStructureChanged);
             renderTaskList();
+            if (currentTaskIndex >= assignments.length) currentTaskIndex = 0;
             loadTask(currentTaskIndex);
+          } else {
+            // Nếu Firebase chưa có bài tập, đồng bộ bộ code mẫu mặc định của hệ thống lên Firebase
+            assignmentsRef.set(defaultAssignments);
           }
         });
       } catch (err) {
-        console.warn("Firebase không khả dụng, sử dụng bộ bài tập mặc định:", err);
+        console.warn("Firebase không khả dụng, sử dụng bộ bài tập mặc định của hệ thống:", err);
       }
     }
 
-    function initTasksState() {
+    function initTasksState(forceReset = false) {
       assignments.forEach(task => {
-        if (!studentTasksState[task.id]) {
-          studentTasksState[task.id] = { passed: false, code: task.template, failCount: 0, lastError: null };
+        if (forceReset || !studentTasksState[task.id] || studentTasksState[task.id].code === undefined) {
+          studentTasksState[task.id] = { 
+            passed: false, 
+            code: task.template || "", 
+            failCount: 0, 
+            lastError: null 
+          };
         }
       });
     }
@@ -541,6 +562,9 @@
     function switchTask(idx) {
       if (assignments[currentTaskIndex]) {
         const curId = assignments[currentTaskIndex].id;
+        if (!studentTasksState[curId]) {
+          studentTasksState[curId] = { passed: false, code: "", failCount: 0, lastError: null };
+        }
         studentTasksState[curId].code = document.getElementById("codeEditor").value;
       }
       currentTaskIndex = idx;
@@ -558,7 +582,15 @@
       document.getElementById("currentFileName").innerText = `${task.id}.py`;
 
       const editor = document.getElementById("codeEditor");
-      editor.value = studentTasksState[task.id]?.code || task.template;
+      // Ưu tiên nạp code mẫu nếu chưa có code hoặc nạp đúng code của task hiện tại
+      const currentCode = (studentTasksState[task.id] && studentTasksState[task.id].code !== undefined)
+        ? studentTasksState[task.id].code
+        : (task.template || "");
+
+      editor.value = currentCode;
+      if (studentTasksState[task.id]) {
+        studentTasksState[task.id].code = currentCode;
+      }
       updateLineNumbers();
 
       const trafficBox = document.getElementById("stemTrafficBox");
@@ -597,13 +629,31 @@
 
     function resetTaskCode() {
       const task = assignments[currentTaskIndex];
+      if (!task) return;
+      if (!studentTasksState[task.id]) {
+        studentTasksState[task.id] = { passed: false, code: task.template, failCount: 0, lastError: null };
+      }
       studentTasksState[task.id].code = task.template;
+      studentTasksState[task.id].failCount = 0;
+      studentTasksState[task.id].lastError = null;
       document.getElementById("codeEditor").value = task.template;
       updateLineNumbers();
-      appendBotMessage(`Thầy đã khôi phục lại mã mẫu cho <b>${task.title.split(":")[0]}</b>.`);
+      appendBotMessage(`Thầy đã khôi phục lại mã mẫu của hệ thống cho <b>${task.title.split(":")[0]}</b>.`);
       const type = getTaskType(task);
       if (type === "stem" || type === "stem_traffic") resetLeds();
       if (type === "stem_morse") resetMorse();
+      syncToFirebase("coding");
+    }
+
+    function resetAllToSystemTemplates() {
+      if (confirm("Em/Thầy có muốn nạp lại toàn bộ 5 bài tập và code mẫu mặc định của hệ thống không?")) {
+        assignments = JSON.parse(JSON.stringify(defaultAssignments));
+        initTasksState(true);
+        renderTaskList();
+        loadTask(currentTaskIndex);
+        syncToFirebase("coding");
+        appendBotMessage("Đã nạp lại thành công toàn bộ 5 bài tập và code mẫu chuẩn của hệ thống!");
+      }
     }
 
     function confirmStudentLogin() {
