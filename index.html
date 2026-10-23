@@ -474,10 +474,10 @@
 
     function getTaskType(task) {
       if (!task) return "algorithm";
-      const code = (task.template || "") + " " + (studentTasksState[task.id]?.code || "");
-      const fullText = ((task.type || "") + " " + (task.title || "") + " " + (task.desc || "") + " " + code).toLowerCase();
-      if (fullText.includes("morse") || fullText.includes("sos") || fullText.includes("morse_dot")) return "stem_morse";
-      if (fullText.includes("đèn giao thông") || fullText.includes("traffic") || fullText.includes("led_red")) return "stem_traffic";
+      if (task.type === "stem_traffic" || task.type === "stem_morse" || task.type === "stem") return task.type;
+      const fullText = ((task.title || "") + " " + (task.desc || "")).toLowerCase();
+      if (fullText.includes("morse") || fullText.includes("sos") || fullText.includes("cứu hộ")) return "stem_morse";
+      if (fullText.includes("đèn giao thông") || fullText.includes("traffic") || fullText.includes("ngã tư")) return "stem_traffic";
       return "algorithm";
     }
 
@@ -821,7 +821,7 @@
       let postamble = "";
       let preambleLineOffset = 0;
 
-      if (taskType.startsWith("stem")) {
+      if (taskType.startsWith("stem") || code.includes("led_") || code.includes("morse_")) {
         preamble = `__stem_actions = []
 class _TrafficLed:
     def __init__(self, color): self.color = color
@@ -1079,6 +1079,17 @@ def morse_dash(): __stem_actions.append(('morse_dash', 1))
       document.getElementById("studentProgressText").innerText = `${passed}/${assignments.length} Đạt`;
     }
 
+    let lastBotReply = "";
+
+    function replyWithAntiRepeat(html) {
+      if (lastBotReply === html) {
+        // Nếu câu trả lời mới giống hệt câu vừa trả lời, chuyển sang nhắc hành động kiểm tra trực tiếp
+        html = `Em hãy bấm nút <b>"Kiểm tra & Chấm bài"</b> (ở thanh màu xanh trên cùng) để máy tính chạy thử và đánh giá chi tiết kết quả cho em nhé!`;
+      }
+      lastBotReply = html;
+      appendBotMessage(html);
+    }
+
     function sendStudentChat() {
       const input = document.getElementById("studentChatInput");
       const text = input.value.trim();
@@ -1089,36 +1100,131 @@ def morse_dash(): __stem_actions.append(('morse_dash', 1))
       const lower = text.toLowerCase();
       const currentTask = assignments[currentTaskIndex];
       const type = getTaskType(currentTask);
+      const studentCode = document.getElementById("codeEditor").value;
 
+      // 1. Lọc các câu hỏi ngoài lề
       const offTopicKeywords = ["game", "chơi", "phim", "bài hát", "ca sĩ", "yêu", "thời tiết", "chuyện cười", "kể chuyện", "đố vui", "ăn gì", "ai là ai", "facebook", "tiktok", "youtube"];
       if (offTopicKeywords.some(kw => lower.includes(kw))) {
         setTimeout(() => {
-          appendBotMessage(`⚠️ <b>Nhắc nhở:</b> Thầy AI chỉ hỗ trợ các câu hỏi liên quan bài học. Em hãy tập trung vào <b>${currentTask.title.split(":")[0]}</b> nhé!`);
-        }, 300);
+          replyWithAntiRepeat(`⚠️ <b>Nhắc nhở:</b> Thầy AI chỉ hỗ trợ các câu hỏi liên quan bài học. Em hãy tập trung vào <b>${currentTask.title.split(":")[0]}</b> nhé!`);
+        }, 250);
         return;
       }
 
+      // 2. Lọc yêu cầu giải hộ / xin chép đáp án
       const askingSolutionKeywords = ["giải giùm", "giải hộ", "sửa giùm", "sửa hộ", "cho em code", "cho đáp án", "viết hộ", "làm hộ", "code mẫu", "chép bài", "đáp án"];
       if (askingSolutionKeywords.some(kw => lower.includes(kw))) {
         setTimeout(() => {
-          appendBotMessage(`🚫 <b>Thầy không thể đưa sẵn code giải:</b> Em hãy tự quan sát các mẫu lệnh trước đó để viết thử nhé!`);
-        }, 300);
+          replyWithAntiRepeat(`🚫 <b>Thầy không thể đưa sẵn code giải:</b> Em hãy quan sát mẫu dữ liệu & minh họa ở cột bên trái và tự viết từng dòng lệnh nhé!`);
+        }, 250);
         return;
       }
 
+      // 3. Nếu có API Key thì gọi Gemini
       const apiKey = document.getElementById("studentApiKey").value.trim();
       if (apiKey) {
         callGeminiSocratic(text, currentTask);
-      } else {
-        setTimeout(() => {
-          if (type === "stem_morse") {
-            appendBotMessage(`Mã Morse: Chữ 'O' gồm 3 nhịp dài <code>morse_dash()</code>. Em hãy quan sát vòng lặp chữ 'S' để làm tương tự nhé!`);
-          } else if (type === "stem_traffic") {
-            appendBotMessage(`Đèn giao thông: Quan sát xem các hàm <code>on()</code> đã được gọi theo đúng thứ tự đỏ ➔ vàng ➔ xanh chưa.`);
+        return;
+      }
+
+      // 4. BỘ MÁY GỢI Ý SOCRATIC CỤC BỘ THÔNG MINH (Hoạt động hoàn hảo ngay cả khi không có API Key)
+      setTimeout(() => {
+        const reply = generateSmartSocraticReply(lower, currentTask, type, studentCode);
+        replyWithAntiRepeat(reply);
+      }, 300);
+    }
+
+    function generateSmartSocraticReply(lower, task, type, code) {
+      const taskName = task.title.split(":")[0];
+      const lastErr = studentTasksState[task?.id]?.lastError;
+
+      // Nhóm 1: Học sinh xác nhận đã hoàn thành hoặc làm xong bước trước ("rồi ạ", "đã rồi ạ", "xong rồi", "em làm rồi", "ok",...)
+      const confirmKeywords = [
+        "rồi ạ", "đã rồi ạ", "đã rồi", "rồi", "xong rồi", "xong rồi ạ", "xong", 
+        "em làm rồi", "em làm rồi ạ", "làm rồi", "làm rồi ạ", "ok rồi", "ok rồi ạ", 
+        "được rồi", "được rồi ạ", "dạ rồi", "dạ rồi ạ", "dạ vâng", "vâng ạ"
+      ];
+      if (confirmKeywords.some(kw => lower === kw || lower.startsWith(kw + " ") || lower.endsWith(" " + kw))) {
+        if (studentTasksState[task.id]?.passed) {
+          return `🎉 <b>Xuất sắc!</b> Em đã hoàn thành tốt bài <b>${taskName}</b>. Hãy bấm chọn bài tiếp theo ở danh sách bên trái để tiếp tục nhé!`;
+        }
+        return `👏 <b>Rất tốt!</b> Em đã hoàn thành phần viết code rồi đúng không? Bây giờ em hãy bấm nút <b>"Kiểm tra & Chấm bài"</b> (ở thanh trên cùng) để hệ thống chạy và chấm điểm xem đạt yêu cầu chưa nhé!`;
+      }
+
+      // Nhóm 2: Học sinh hỏi bước tiếp theo ("bước tiếp theo là em phải làm gì", "làm gì tiếp", "tiếp theo", "hướng dẫn tiếp",...)
+      const nextStepKeywords = [
+        "bước tiếp theo", "bước tiếp", "làm gì tiếp", "làm gì nữa", "tiếp theo", 
+        "hướng dẫn tiếp", "tiếp theo là gì", "làm sao nữa", "thế nào nữa", "phải làm gì", "bước sau", "giờ làm gì"
+      ];
+      if (nextStepKeywords.some(kw => lower.includes(kw))) {
+        if (type === "stem_traffic") {
+          const hasRed = code.includes("led_red.on()");
+          const hasYellow = code.includes("led_yellow.on()");
+          const hasGreen = code.includes("led_green.on()");
+          if (!hasRed) {
+            return `🚦 <b>Bước 1:</b> Em hãy bật đèn ĐỎ sáng trước bằng lệnh <code>led_red.on()</code> và duy trì 2 giây với <code>sleep(2)</code> nhé.`;
+          } else if (!hasYellow) {
+            return `🚦 <b>Bước 2:</b> Sau đèn đỏ, em chuyển sang bật đèn VÀNG bằng <code>led_yellow.on()</code> và duy trì 1 giây bằng <code>sleep(1)</code>.`;
+          } else if (!hasGreen) {
+            return `🚦 <b>Bước 3:</b> Sau đèn vàng, em tiếp tục bật đèn XANH bằng <code>led_green.on()</code> và duy trì 2 giây bằng <code>sleep(2)</code> để xe được đi.`;
           } else {
-            appendBotMessage(`Thầy đã ghi nhận câu hỏi. Em hãy bấm nút <b>"Kiểm tra & Chấm bài"</b> để xem kết quả chi tiết nhé!`);
+            return `✨ <b>Tuyệt vời!</b> Trong code của em đã có đủ chu kỳ cả 3 đèn (Đỏ ➔ Vàng ➔ Xanh) rồi. Bước tiếp theo em hãy bấm nút <b>"Kiểm tra & Chấm bài"</b> để xem mô hình ngã tư diễn hoạt nhé!`;
           }
-        }, 400);
+        } else if (type === "stem_morse") {
+          const hasDot = code.includes("morse_dot()");
+          const hasDash = code.includes("morse_dash()");
+          if (!hasDot) {
+            return `📻 <b>Bước 1:</b> Dùng vòng lặp <code>for i in range(3):</code> gọi <code>morse_dot()</code> để phát 3 nhịp ngắn cho chữ S.`;
+          } else if (!hasDash) {
+            return `📻 <b>Bước 2:</b> Dùng vòng lặp <code>for i in range(3):</code> gọi <code>morse_dash()</code> để phát 3 nhịp dài cho chữ O.`;
+          } else {
+            return `📻 <b>Bước 3:</b> Phát thêm 3 nhịp ngắn chữ S để hoàn tất chuẩn SOS, sau đó bấm <b>"Kiểm tra & Chấm bài"</b> nhé!`;
+          }
+        } else if (task.id === "task_1") {
+          if (!code.includes("name") || !code.includes("age")) {
+            return `📝 <b>Bước 1:</b> Khai báo hai biến <code>name = 'Tên_Em'</code> và <code>age = 12</code>.`;
+          }
+          return `📝 <b>Bước 2:</b> Dùng lệnh <code>print(f'Xin chao, em la {name}, nam nay em {age} tuoi!')</code> để in câu chào ra màn hình nhé!`;
+        } else if (task.id === "task_2") {
+          if (!code.includes("dtb")) {
+            return `📝 <b>Bước 1:</b> Tính điểm trung bình theo công thức <code>dtb = (toan + van) / 2</code>.`;
+          }
+          return `📝 <b>Bước 2:</b> Dùng câu lệnh điều kiện <code>if dtb >= 8.0:</code> in 'Hoc sinh Gioi', ngược lại <code>else:</code> in 'Can co gang'.`;
+        } else if (task.id === "task_3") {
+          if (!code.includes("tong")) {
+            return `📝 <b>Bước 1:</b> Đặt biến tích lũy tổng ban đầu <code>tong = 0</code> trước vòng lặp.`;
+          }
+          return `📝 <b>Bước 2:</b> Dùng vòng lặp <code>for i in range(1, n + 1):</code> để cộng dồn <code>tong += i</code> và cuối cùng in kết quả bằng <code>print(f'Tong la: {tong}')</code>.`;
+        }
+      }
+
+      // Nhóm 3: Học sinh hỏi về lỗi ("sao lỗi", "bị lỗi", "lỗi gì", "tại sao sai", "sửa sao",...)
+      const errorKeywords = ["lỗi", "bị lỗi", "sao lỗi", "không chạy", "tại sao sai", "sai ở đâu", "sửa sao", "sửa thế nào", "nameerror", "syntaxerror", "name error", "syntax error"];
+      if (errorKeywords.some(kw => lower.includes(kw))) {
+        if (lastErr && lastErr.hint) {
+          return `🔍 <b>Chẩn đoán lỗi vừa gặp:</b> ${lastErr.msg}<br><br>💡 <b>Gợi ý tư duy:</b> ${lastErr.hint}`;
+        }
+        return `Em hãy bấm nút <b>"Kiểm tra & Chấm bài"</b> trước để Thầy quét mã nguồn và chỉ ra chính xác vị trí dòng lỗi giúp em nhé!`;
+      }
+
+      // Nhóm 4: Chào hỏi, xưng hô lễ phép ("chào", "hello", "hi", "thầy ơi", "thầy")
+      const greetingKeywords = ["chào thầy", "chào", "hello", "hi", "thầy ơi", "ơi thầy", "thầy"];
+      if (greetingKeywords.some(kw => lower === kw || lower.startsWith(kw + " "))) {
+        return `Chào em! Thầy AI đã sẵn sàng đồng hành cùng em. Em đang vướng ở dòng lệnh nào của <b>${taskName}</b>? Hãy hỏi Thầy nhé!`;
+      }
+
+      // Nhóm 5: Cảm ơn ("cảm ơn", "thank", "dạ cảm ơn")
+      if (lower.includes("cảm ơn") || lower.includes("thank")) {
+        return `Không có gì! Em cứ tự tin thực hành nhé. Đừng quên bấm <b>"Kiểm tra & Chấm bài"</b> để hoàn thành nhiệm vụ!`;
+      }
+
+      // Nhóm 6: Mặc định theo ngữ cảnh từng loại bài tập
+      if (type === "stem_traffic") {
+        return `Mô hình đèn ngã tư cần tuân thủ chu kỳ: Bật ĐỎ (2s) ➔ Bật VÀNG (1s) ➔ Bật XANH (2s). Em hãy kiểm tra xem trong code đã gọi đủ các lệnh <code>on()</code> và <code>sleep()</code> theo thứ tự chưa nhé.`;
+      } else if (type === "stem_morse") {
+        return `Mã Morse SOS gồm 3 chữ: S (3 nhịp ngắn) ➔ O (3 nhịp dài) ➔ S (3 nhịp ngắn). Em hãy dùng vòng lặp <code>for</code> cho từng chữ nhé.`;
+      } else {
+        return `Em hãy quan sát kỹ phần <b>Mẫu dữ liệu & Minh họa</b> ở bên trái, viết thử các câu lệnh rồi bấm <b>"Kiểm tra & Chấm bài"</b> để xem kết quả đánh giá nhé!`;
       }
     }
 
